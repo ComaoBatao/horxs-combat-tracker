@@ -686,6 +686,29 @@
   }
 
 
+  .panelToggles{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:12px;
+    margin-bottom:22px;
+  }
+
+  .panelToggle{
+    background:#332651;
+    color:#fff1a8;
+    border-color:var(--borderDark);
+    min-height:52px;
+  }
+
+  .panelToggle.is-hidden{
+    background:#181126;
+    color:#8f87a2;
+  }
+
+  .panelHidden{
+    display:none !important;
+  }
+
   .obsPanel{
     margin-bottom:24px;
     background:#201638;
@@ -782,6 +805,7 @@
   }
 
   @media (max-width: 760px){
+    .panelToggles{grid-template-columns:1fr}
     .characterCreate{
       grid-template-columns:1fr 1fr;
       grid-template-areas:
@@ -856,8 +880,13 @@
     </div>
   </header>
 
+  <div class="panelToggles">
+    <button class="panelToggle" id="toggleDiscordBtn" type="button">ESCONDER DISCORD / VOICE</button>
+    <button class="panelToggle" id="toggleObsBtn" type="button">ESCONDER OBS / SESSÃO</button>
+    <button class="panelToggle" id="toggleLibraryBtn" type="button">ESCONDER BIBLIOTECA</button>
+  </div>
 
-  <section class="obsPanel pixel-box">
+  <section class="obsPanel pixel-box" id="obsPanel">
     <div class="obsTop">
       <div>
         <h2 style="margin-bottom:8px">OBS / SESSÃO ONLINE</h2>
@@ -899,7 +928,7 @@
     </details>
   </section>
 
-  <section class="discordPanel pixel-box">
+  <section class="discordPanel pixel-box" id="discordPanel">
     <div class="discordHeader">
       <div>
         <h2 style="margin-bottom:8px">DISCORD / VOICE BRIDGE</h2>
@@ -976,7 +1005,7 @@
 
       <div id="editingLibrary" class="editingLibrary"></div>
 
-      <div style="margin-top:22px">
+      <div style="margin-top:22px" id="libraryPanel">
         <div class="libraryHeader">
           <h2 style="margin:0">BIBLIOTECA DE PERSONAGENS</h2>
           <span id="libraryCount" class="sessionCode">0 guardados</span>
@@ -1084,6 +1113,7 @@
   const SESSION_KEY = "horxs_obs_session_v1";
   const LIBRARY_KEY = "horxs_character_library_v1";
   const DISCORD_BRIDGE_KEY = "horxs_discord_bridge_v1";
+  const PANEL_VISIBILITY_KEY = "horxs_panel_visibility_v1";
 
   let firebaseConfig = loadFirebaseConfig();
   let sessionId = localStorage.getItem(SESSION_KEY) || createSessionId();
@@ -1192,6 +1222,46 @@
       notice("A biblioteca ficou demasiado grande para este navegador.");
       return false;
     }
+  }
+
+  function loadPanelVisibility() {
+    const defaults = {discord:true, obs:true, library:true};
+    try {
+      const saved = JSON.parse(localStorage.getItem(PANEL_VISIBILITY_KEY) || "{}");
+      return {...defaults, ...saved};
+    } catch {
+      return defaults;
+    }
+  }
+
+  const panelVisibility = loadPanelVisibility();
+
+  function savePanelVisibility() {
+    localStorage.setItem(PANEL_VISIBILITY_KEY, JSON.stringify(panelVisibility));
+  }
+
+  function applyPanelVisibility() {
+    const configs = [
+      {key:"discord", panel:$("discordPanel"), button:$("toggleDiscordBtn"), hideText:"ESCONDER DISCORD / VOICE", showText:"MOSTRAR DISCORD / VOICE"},
+      {key:"obs", panel:$("obsPanel"), button:$("toggleObsBtn"), hideText:"ESCONDER OBS / SESSÃO", showText:"MOSTRAR OBS / SESSÃO"},
+      {key:"library", panel:$("libraryPanel"), button:$("toggleLibraryBtn"), hideText:"ESCONDER BIBLIOTECA", showText:"MOSTRAR BIBLIOTECA"}
+    ];
+
+    configs.forEach(({key,panel,button,hideText,showText}) => {
+      const visible = panelVisibility[key] !== false;
+      panel?.classList.toggle("panelHidden", !visible);
+      button?.classList.toggle("is-hidden", !visible);
+      if (button) {
+        button.textContent = visible ? hideText : showText;
+        button.setAttribute("aria-expanded", String(visible));
+      }
+    });
+  }
+
+  function togglePanel(key) {
+    panelVisibility[key] = !(panelVisibility[key] !== false);
+    savePanelVisibility();
+    applyPanelVisibility();
   }
 
   function loadFirebaseConfig() {
@@ -2164,6 +2234,10 @@
     }
   });
 
+  $("toggleDiscordBtn").addEventListener("click", () => togglePanel("discord"));
+  $("toggleObsBtn").addEventListener("click", () => togglePanel("obs"));
+  $("toggleLibraryBtn").addEventListener("click", () => togglePanel("library"));
+
   $("saveLibraryBtn").addEventListener("click", saveFormToLibrary);
   $("cancelLibraryEditBtn").addEventListener("click", () => {
     clearCharacterForm();
@@ -2332,6 +2406,7 @@
   });
 
   load();
+  applyPanelVisibility();
   discordBridgeCode.textContent = discordBridgeId;
   renderLibrary();
   render();
