@@ -12,6 +12,12 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 #stage{width:100vw;height:100vh;position:relative}
 .pixel{border:4px solid #110b22;box-shadow:0 0 0 4px #5f4a96,0 8px 0 #110b22,8px 8px 0 rgba(0,0,0,.3);background:rgba(32,22,56,.94)}
 .hidden{display:none!important}
+body.overlay-off #waiting,
+body.overlay-off #full,
+body.overlay-off #minimal,
+body.overlay-off #roster{
+  display:none!important;
+}
 .waiting{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);padding:16px 20px;font-size:12px;line-height:1.7;text-align:center}
 .full{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);width:min(780px,80vw);padding:20px 24px}
 .overlayPortrait{width:118px;height:118px;margin:10px auto 8px;border:4px solid #110b22;background:#120c20;display:grid;place-items:center;overflow:hidden;color:#8af2ff;font-size:26px;box-shadow:0 0 0 4px rgba(95,74,150,.65)}
@@ -226,8 +232,20 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
   function render(data){
     lastData = data;
     if (!data || !Array.isArray(data.characters)) {
+      document.body.classList.remove("overlay-off");
       waiting.classList.remove("hidden");
       waiting.textContent = "À espera de dados do combate...";
+      return;
+    }
+
+    const overlayVisible = data.overlayVisible !== false;
+    document.body.classList.toggle("overlay-off", !overlayVisible);
+
+    if (!overlayVisible) {
+      waiting.classList.add("hidden");
+      $("full").classList.add("hidden");
+      $("minimal").classList.add("hidden");
+      $("roster").classList.add("hidden");
       return;
     }
 
