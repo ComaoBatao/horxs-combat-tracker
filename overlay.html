@@ -20,9 +20,11 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 .roleBadge{display:inline-block;padding:5px 8px;border:3px solid #110b22;font-size:8px;line-height:1}
 .role-player{background:#174b73;color:#8fe9ff}
 .role-npc{background:#514522;color:#ffe98a}
+.role-enemy{background:#5b2626;color:#ffb0a0}
 .role-boss{background:#6d1c39;color:#ff9fbd;box-shadow:0 0 0 2px rgba(255,79,154,.2)}
 .rosterRow.player{border-left:7px solid #36c5f0}
 .rosterRow.npc{border-left:7px solid #e3bd45}
+.rosterRow.enemy{border-left:7px solid #ff7a59}
 .rosterRow.boss{border-left:7px solid #ff4f9a}
 .hpArea{margin-top:14px}
 .hpText{font-size:11px;line-height:1.6;margin-bottom:7px;text-align:center}
@@ -107,7 +109,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
   }
 
   function roleOf(char){
-    return ["PLAYER","NPC","BOSS"].includes(char?.role) ? char.role : "PLAYER";
+    return ["PLAYER","NPC","ENEMY","BOSS"].includes(char?.role) ? char.role : "PLAYER";
   }
 
   function roleCss(char){
