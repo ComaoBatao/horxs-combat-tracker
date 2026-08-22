@@ -207,6 +207,7 @@
     grid-template-areas:
       "name name name"
       "current max role"
+      "image image image"
       "add add add";
     gap:12px;
     align-items:end;
@@ -216,7 +217,53 @@
   .characterCreate .field-current{grid-area:current}
   .characterCreate .field-max{grid-area:max}
   .characterCreate .field-role{grid-area:role}
+  .characterCreate .field-image{grid-area:image}
   .characterCreate .add-character{grid-area:add;width:100%}
+
+  .avatarPicker{
+    display:grid;
+    grid-template-columns:92px 1fr;
+    gap:12px;
+    align-items:center;
+    padding:10px;
+    background:#201632;
+    border:4px solid var(--borderDark);
+  }
+
+  .avatarPreview{
+    width:92px;
+    height:92px;
+    border:4px solid var(--borderDark);
+    background:#120c20;
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+    color:#8574a5;
+    font-size:9px;
+    line-height:1.5;
+    text-align:center;
+  }
+
+  .avatarPreview img{width:100%;height:100%;object-fit:cover;display:none;image-rendering:auto}
+  .avatarPreview.has-image img{display:block}
+  .avatarPreview.has-image .avatarPlaceholder{display:none}
+
+  .avatarPickerInfo{min-width:0}
+  .avatarPickerInfo p{margin:9px 0 0;color:#bdaed9;font-size:9px;line-height:1.7}
+
+  .fileButton{
+    display:inline-block;
+    border:4px solid var(--borderDark);
+    background:#6c5aa6;
+    color:white;
+    padding:11px 12px;
+    cursor:pointer;
+    font-size:10px;
+    line-height:1.4;
+    box-shadow:0 5px 0 0 var(--borderDark);
+  }
+  .fileButton:active{transform:translateY(3px);box-shadow:0 2px 0 0 var(--borderDark)}
+  .fileName{margin-top:10px;color:#fff1a8;font-size:9px;line-height:1.6;word-break:break-word}
 
   .hpManager{
     display:grid;
@@ -325,6 +372,28 @@
     flex:0 0 auto;
   }
 
+  .charAvatar{
+    width:58px;
+    height:58px;
+    flex:0 0 58px;
+    border:4px solid var(--borderDark);
+    background:#120c20;
+    object-fit:cover;
+    image-rendering:auto;
+  }
+
+  .charAvatarFallback{
+    width:58px;
+    height:58px;
+    flex:0 0 58px;
+    border:4px solid var(--borderDark);
+    background:#241844;
+    display:grid;
+    place-items:center;
+    color:#8af2ff;
+    font-size:16px;
+  }
+
   .charName{
     flex:1;
     min-width:0;
@@ -381,6 +450,23 @@
     line-height:1.8;
     margin-bottom:10px;
   }
+
+  .turnAvatar{
+    width:112px;
+    height:112px;
+    margin:0 auto 12px;
+    border:4px solid var(--borderDark);
+    background:#120c20;
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+    color:#8af2ff;
+    font-size:24px;
+    box-shadow:0 0 0 4px rgba(95,74,150,.55);
+  }
+  .turnAvatar img{width:100%;height:100%;object-fit:cover;display:none;image-rendering:auto}
+  .turnAvatar.has-image img{display:block}
+  .turnAvatar.has-image span{display:none}
 
   .turnName{
     font-size:clamp(18px,3vw,30px);
@@ -638,6 +724,8 @@
 
   @media (max-width: 540px){
     .formRow{grid-template-columns:1fr}
+    .avatarPicker{grid-template-columns:1fr}
+    .avatarPreview{width:120px;height:120px;margin:auto}
     .characterCreate{
       grid-template-columns:1fr;
       grid-template-areas:
@@ -759,6 +847,23 @@
             <option value="BOSS">BOSS</option>
           </select>
         </div>
+
+        <div class="field-image">
+          <label>Imagem do personagem (obrigatória)</label>
+          <div class="avatarPicker">
+            <div id="avatarPreview" class="avatarPreview">
+              <img id="avatarPreviewImg" alt="Preview do personagem">
+              <span class="avatarPlaceholder">SEM<br>IMAGEM</span>
+            </div>
+            <div class="avatarPickerInfo">
+              <input id="characterImage" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+              <label class="fileButton" for="characterImage">Escolher imagem</label>
+              <div id="characterImageName" class="fileName">Nenhuma imagem escolhida.</div>
+              <p>PNG, JPG ou WEBP. O site corta ao centro e converte automaticamente para 300 × 300. Máximo: 8 MB.</p>
+            </div>
+          </div>
+        </div>
+
         <button class="add-character" id="addCharacterBtn">Adicionar personagem</button>
       </div>
 
@@ -812,6 +917,10 @@
     <section class="card pixel-box">
       <div class="turnBox pixel-box">
         <div class="turnLabel">E A VEZ DE</div>
+        <div id="turnAvatar" class="turnAvatar">
+          <img id="turnAvatarImg" alt="Retrato do personagem atual">
+          <span id="turnAvatarFallback">?</span>
+        </div>
         <div id="turnName" class="turnName">—</div>
         <div id="turnSub" class="turnSub">Adiciona personagens e inicia o combate.</div>
       </div>
@@ -875,6 +984,8 @@
   const undoStack = [];
   const redoStack = [];
   const MAX_UNDO = 100;
+  let pendingCharacterAvatar = "";
+  let avatarProcessing = false;
 
   const $ = id => document.getElementById(id);
 
@@ -882,6 +993,10 @@
   const characterCurrentHp = $("characterCurrentHp");
   const characterMaxHp = $("characterMaxHp");
   const characterRole = $("characterRole");
+  const characterImage = $("characterImage");
+  const avatarPreview = $("avatarPreview");
+  const avatarPreviewImg = $("avatarPreviewImg");
+  const characterImageName = $("characterImageName");
   const characterList = $("characterList");
   const hpCharacter = $("hpCharacter");
   const hpAmount = $("hpAmount");
@@ -892,6 +1007,9 @@
   const effectsList = $("effectsList");
   const turnName = $("turnName");
   const turnSub = $("turnSub");
+  const turnAvatar = $("turnAvatar");
+  const turnAvatarImg = $("turnAvatarImg");
+  const turnAvatarFallback = $("turnAvatarFallback");
   const roundEl = $("round");
   const historyList = $("historyList");
   const firebaseDot = $("firebaseDot");
@@ -1071,7 +1189,11 @@
   }
 
   function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (err) {
+      console.warn("Não foi possível guardar tudo no localStorage:", err);
+    }
   }
 
   function load() {
@@ -1085,7 +1207,8 @@
             ? Math.max(0, Math.min(Number(c.currentHp), maxHp))
             : maxHp;
           const role = ["PLAYER","NPC","ENEMY","BOSS"].includes(c.role) ? c.role : "PLAYER";
-          return {...c, maxHp, currentHp, role};
+          const avatar = safeAvatarData(c.avatar);
+          return {...c, maxHp, currentHp, role, avatar};
         });
       }
     } catch {}
@@ -1113,6 +1236,84 @@
       .replaceAll("'", "&#039;");
   }
 
+  function safeAvatarData(value) {
+    const s = String(value || "");
+    return /^data:image\/(?:png|jpeg|webp);base64,/i.test(s) ? s : "";
+  }
+
+  function avatarInitial(name) {
+    const clean = String(name || "?").trim();
+    return (clean[0] || "?").toUpperCase();
+  }
+
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImageElement(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("A imagem escolhida é inválida."));
+      img.src = src;
+    });
+  }
+
+  async function make300Avatar(file) {
+    const allowed = ["image/png", "image/jpeg", "image/webp"];
+    if (!file) throw new Error("Escolhe uma imagem para o personagem.");
+    if (!allowed.includes(file.type)) throw new Error("Usa uma imagem PNG, JPG ou WEBP.");
+    if (file.size > 8 * 1024 * 1024) throw new Error("A imagem não pode ter mais de 8 MB.");
+
+    const raw = await readFileAsDataURL(file);
+    const img = await loadImageElement(raw);
+    const sourceSize = Math.min(img.naturalWidth, img.naturalHeight);
+    const sx = Math.max(0, (img.naturalWidth - sourceSize) / 2);
+    const sy = Math.max(0, (img.naturalHeight - sourceSize) / 2);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 300;
+    canvas.height = 300;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.clearRect(0, 0, 300, 300);
+    ctx.drawImage(img, sx, sy, sourceSize, sourceSize, 0, 0, 300, 300);
+
+    let result = canvas.toDataURL("image/webp", 0.80);
+    if (!result.startsWith("data:image/webp")) {
+      result = canvas.toDataURL("image/jpeg", 0.82);
+    }
+    return result;
+  }
+
+  function resetAvatarPicker() {
+    pendingCharacterAvatar = "";
+    avatarProcessing = false;
+    characterImage.value = "";
+    avatarPreview.classList.remove("has-image");
+    avatarPreviewImg.removeAttribute("src");
+    characterImageName.textContent = "Nenhuma imagem escolhida.";
+    $("addCharacterBtn").disabled = false;
+  }
+
+  function setTurnAvatar(char) {
+    const avatar = safeAvatarData(char?.avatar);
+    if (avatar) {
+      turnAvatarImg.src = avatar;
+      turnAvatar.classList.add("has-image");
+    } else {
+      turnAvatarImg.removeAttribute("src");
+      turnAvatar.classList.remove("has-image");
+      turnAvatarFallback.textContent = avatarInitial(char?.name);
+    }
+  }
+
   function normalizeRole(role) {
     return ["PLAYER","NPC","ENEMY","BOSS"].includes(role) ? role : "PLAYER";
   }
@@ -1134,8 +1335,13 @@
         row.className = `char role-${roleClass(role)}` + (state.started && index === state.currentIndex ? " active" : "");
         const hpPercent = char.maxHp > 0 ? Math.max(0, Math.min(100, (char.currentHp / char.maxHp) * 100)) : 0;
         const hpClass = char.currentHp <= 0 ? "dead" : hpPercent <= 25 ? "critical" : hpPercent <= 50 ? "low" : "";
+        const avatar = safeAvatarData(char.avatar);
+        const avatarHtml = avatar
+          ? `<img class="charAvatar" src="${escapeHTML(avatar)}" alt="${escapeHTML(char.name)}">`
+          : `<div class="charAvatarFallback">${escapeHTML(avatarInitial(char.name))}</div>`;
         row.innerHTML = `
           <div class="pos">${index + 1}</div>
+          ${avatarHtml}
           <div class="hpWrap">
             <div class="charName">${escapeHTML(char.name)} <span class="roleBadge ${roleClass(role)}">${role}</span></div>
             <div class="hpText">HP ${char.currentHp} / ${char.maxHp}</div>
@@ -1182,6 +1388,7 @@
 
     if (state.started && state.characters[state.currentIndex]) {
       const current = state.characters[state.currentIndex];
+      setTurnAvatar(current);
       turnName.textContent = current.name;
       const activeEffects = state.effects.filter(e => e.characterId === current.id);
       const effectText = activeEffects.length
@@ -1189,6 +1396,7 @@
         : "Sem efeitos ativos";
       turnSub.textContent = `${normalizeRole(current.role)} • HP ${current.currentHp}/${current.maxHp} • ${effectText}`;
     } else {
+      setTurnAvatar(null);
       turnName.textContent = "—";
       turnSub.textContent = state.characters.length
         ? "Carrega em Iniciar combate."
@@ -1236,6 +1444,8 @@
     const role = normalizeRole(characterRole.value);
 
     if (!name) return notice("Escreve o nome do personagem.");
+    if (avatarProcessing) return notice("Espera a imagem acabar de processar.");
+    if (!safeAvatarData(pendingCharacterAvatar)) return notice("Escolhe uma imagem para o personagem.");
     if (!Number.isFinite(maxHp) || maxHp < 1) return notice("O HP máximo tem de ser 1 ou mais.");
     if (!Number.isFinite(currentHpInput) || currentHpInput < 0) return notice("O HP atual não pode ser negativo.");
 
@@ -1248,11 +1458,13 @@
       name,
       currentHp,
       maxHp,
-      role
+      role,
+      avatar: pendingCharacterAvatar
     });
 
     addHistory(`+ ${name} [${role}] entrou com ${currentHp}/${maxHp} HP.`);
     characterName.value = "";
+    resetAvatarPicker();
     render();
     characterName.focus();
   }
@@ -1451,6 +1663,38 @@
     addHistory(`O efeito "${effect.name}" foi removido manualmente.`);
     render();
   }
+
+  characterImage.addEventListener("change", async () => {
+    const file = characterImage.files?.[0];
+    pendingCharacterAvatar = "";
+    avatarPreview.classList.remove("has-image");
+    avatarPreviewImg.removeAttribute("src");
+
+    if (!file) {
+      characterImageName.textContent = "Nenhuma imagem escolhida.";
+      return;
+    }
+
+    avatarProcessing = true;
+    $("addCharacterBtn").disabled = true;
+    characterImageName.textContent = `A processar: ${file.name}`;
+
+    try {
+      pendingCharacterAvatar = await make300Avatar(file);
+      avatarPreviewImg.src = pendingCharacterAvatar;
+      avatarPreview.classList.add("has-image");
+      characterImageName.textContent = `${file.name} → pronta em 300 × 300`;
+      notice("Imagem pronta em 300 × 300.");
+    } catch (err) {
+      pendingCharacterAvatar = "";
+      characterImage.value = "";
+      characterImageName.textContent = "Nenhuma imagem escolhida.";
+      notice(err.message);
+    } finally {
+      avatarProcessing = false;
+      $("addCharacterBtn").disabled = false;
+    }
+  });
 
   $("addCharacterBtn").addEventListener("click", addCharacter);
   characterName.addEventListener("keydown", e => {
