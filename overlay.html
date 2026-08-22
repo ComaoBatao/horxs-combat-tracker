@@ -14,6 +14,10 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 .hidden{display:none!important}
 .waiting{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);padding:16px 20px;font-size:12px;line-height:1.7;text-align:center}
 .full{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);width:min(780px,80vw);padding:20px 24px}
+.overlayPortrait{width:118px;height:118px;margin:10px auto 8px;border:4px solid #110b22;background:#120c20;display:grid;place-items:center;overflow:hidden;color:#8af2ff;font-size:26px;box-shadow:0 0 0 4px rgba(95,74,150,.65)}
+.overlayPortrait img{width:100%;height:100%;object-fit:cover;display:none;image-rendering:auto}
+.overlayPortrait.has-image img{display:block}
+.overlayPortrait.has-image span{display:none}
 .kicker{font-size:10px;color:#8af2ff;text-align:center;line-height:1.6}
 .name{font-size:clamp(24px,3vw,44px);text-align:center;line-height:1.4;color:#fff59e;text-shadow:4px 4px 0 #110b22;margin:10px 0 14px;word-break:break-word}
 .meta{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;font-size:10px;line-height:1.7;color:#e8dcff}
@@ -36,10 +40,14 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 .effects{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
 .effect{border:3px solid #110b22;background:#3a285c;padding:8px 10px;font-size:9px;line-height:1.5;color:#fff1a8}
 .minimal{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);padding:16px 28px;min-width:420px;text-align:center}
+.minimal .overlayPortrait{width:78px;height:78px;font-size:18px;margin:8px auto 4px}
 .minimal .name{margin:4px 0 0}
 .roster{position:absolute;left:3%;bottom:5%;width:min(500px,45vw);padding:14px}
 .rosterTitle{font-size:10px;color:#8af2ff;margin-bottom:10px}
 .rosterRow{margin:8px 0;padding:8px;background:rgba(15,10,28,.72);border:3px solid #110b22}
+.rosterMain{display:grid;grid-template-columns:48px 1fr;gap:9px;align-items:center}
+.rosterAvatar{width:48px;height:48px;border:3px solid #110b22;background:#120c20;display:grid;place-items:center;overflow:hidden;color:#8af2ff;font-size:12px}
+.rosterAvatar img{width:100%;height:100%;object-fit:cover;image-rendering:auto}
 .rosterTop{display:flex;justify-content:space-between;gap:12px;font-size:9px;line-height:1.5}
 .rosterRow.active{outline:4px solid #00d9ff}
 .roster .hpOuter{height:15px;margin-top:6px;border-width:3px}
@@ -52,6 +60,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 
   <div id="full" class="full pixel hidden">
     <div class="kicker">É A VEZ DE</div>
+    <div id="fullAvatar" class="overlayPortrait"><img id="fullAvatarImg" alt=""><span id="fullAvatarFallback">?</span></div>
     <div id="fullName" class="name">—</div>
     <div class="meta"><span id="fullRole" class="roleBadge role-player">PLAYER</span><span id="fullRound">RODADA 1</span><span id="fullHpMeta">HP —</span></div>
     <div class="hpArea">
@@ -63,6 +72,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 
   <div id="minimal" class="minimal pixel hidden">
     <div class="kicker">É A VEZ DE</div>
+    <div id="minimalAvatar" class="overlayPortrait"><img id="minimalAvatarImg" alt=""><span id="minimalAvatarFallback">?</span></div>
     <div id="minimalName" class="name">—</div>
     <div style="text-align:center"><span id="minimalRole" class="roleBadge role-player">PLAYER</span></div>
   </div>
@@ -116,6 +126,46 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
     return roleOf(char).toLowerCase();
   }
 
+  function avatarData(char){
+    const s = String(char?.avatar || "");
+    return /^data:image\/(?:png|jpeg|webp);base64,/i.test(s) ? s : "";
+  }
+
+  function initialOf(char){
+    const name = String(char?.name || "?").trim();
+    return (name[0] || "?").toUpperCase();
+  }
+
+  function setPortrait(prefix, char){
+    const box = $(`${prefix}Avatar`);
+    const img = $(`${prefix}AvatarImg`);
+    const fallback = $(`${prefix}AvatarFallback`);
+    if (!box || !img || !fallback) return;
+    if (!char) {
+      img.removeAttribute("src");
+      box.classList.remove("has-image");
+      box.classList.add("hidden");
+      return;
+    }
+    box.classList.remove("hidden");
+    const avatar = avatarData(char);
+    if (avatar) {
+      img.src = avatar;
+      box.classList.add("has-image");
+    } else {
+      img.removeAttribute("src");
+      box.classList.remove("has-image");
+      fallback.textContent = initialOf(char);
+    }
+  }
+
+  function avatarHtml(char){
+    const avatar = avatarData(char);
+    return avatar
+      ? `<div class="rosterAvatar"><img src="${esc(avatar)}" alt="${esc(char?.name || "")}"></div>`
+      : `<div class="rosterAvatar">${esc(initialOf(char))}</div>`;
+  }
+
   function esc(value){
     return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));
   }
@@ -136,6 +186,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 
     if (mode === "full") {
       if (!current) {
+        setPortrait("full", null);
         $("fullName").textContent = "COMBATE NÃO INICIADO";
         $("fullHpMeta").textContent = "";
         $("fullRole").textContent = "";
@@ -147,6 +198,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
       }
 
       const hp = hpInfo(current);
+      setPortrait("full", current);
       $("fullName").textContent = current.name;
       const currentRole = roleOf(current);
       $("fullRole").textContent = currentRole;
@@ -164,6 +216,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
     }
 
     if (mode === "minimal") {
+      setPortrait("minimal", current);
       $("minimalName").textContent = current ? current.name : "COMBATE NÃO INICIADO";
       const r = current ? roleOf(current) : "";
       $("minimalRole").textContent = r;
@@ -176,8 +229,13 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
             const hp = hpInfo(char);
             const role = roleOf(char);
             return `<div class="rosterRow ${roleCss(char)} ${data.started && i === data.currentIndex ? "active" : ""}">
-              <div class="rosterTop"><span>${esc(char.name)} <span class="roleBadge role-${roleCss(char)}">${role}</span></span><span>${hp.current}/${hp.max}</span></div>
-              <div class="hpOuter"><div class="hpInner ${hp.cls}" style="width:${hp.percent}%"></div></div>
+              <div class="rosterMain">
+                ${avatarHtml(char)}
+                <div>
+                  <div class="rosterTop"><span>${esc(char.name)} <span class="roleBadge role-${roleCss(char)}">${role}</span></span><span>${hp.current}/${hp.max}</span></div>
+                  <div class="hpOuter"><div class="hpInner ${hp.cls}" style="width:${hp.percent}%"></div></div>
+                </div>
+              </div>
             </div>`;
           }).join("")
         : `<div class="effect">SEM PERSONAGENS</div>`;
