@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>HORXS OBS Overlay</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:transparent!important}
+body{font-family:"Press Start 2P",monospace;color:#fff6d6}
+#stage{width:100vw;height:100vh;position:relative}
+.pixel{border:4px solid #110b22;box-shadow:0 0 0 4px #5f4a96,0 8px 0 #110b22,8px 8px 0 rgba(0,0,0,.3);background:rgba(32,22,56,.94)}
+.hidden{display:none!important}
+.waiting{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);padding:16px 20px;font-size:12px;line-height:1.7;text-align:center}
+.full{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);width:min(780px,80vw);padding:20px 24px}
+.kicker{font-size:10px;color:#8af2ff;text-align:center;line-height:1.6}
+.name{font-size:clamp(24px,3vw,44px);text-align:center;line-height:1.4;color:#fff59e;text-shadow:4px 4px 0 #110b22;margin:10px 0 14px;word-break:break-word}
+.meta{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;font-size:10px;line-height:1.7;color:#e8dcff}
+.hpArea{margin-top:14px}
+.hpText{font-size:11px;line-height:1.6;margin-bottom:7px;text-align:center}
+.hpOuter{height:24px;border:4px solid #110b22;background:#160e27;padding:2px}
+.hpInner{height:100%;background:linear-gradient(90deg,#36d36f,#8df29c);transition:width .2s ease}
+.hpInner.low{background:linear-gradient(90deg,#f0b13b,#ffd75a)}
+.hpInner.critical{background:linear-gradient(90deg,#cc3f52,#ff6b6b)}
+.hpInner.dead{background:#5f536f}
+.effects{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.effect{border:3px solid #110b22;background:#3a285c;padding:8px 10px;font-size:9px;line-height:1.5;color:#fff1a8}
+.minimal{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);padding:16px 28px;min-width:420px;text-align:center}
+.minimal .name{margin:4px 0 0}
+.roster{position:absolute;left:3%;bottom:5%;width:min(500px,45vw);padding:14px}
+.rosterTitle{font-size:10px;color:#8af2ff;margin-bottom:10px}
+.rosterRow{margin:8px 0;padding:8px;background:rgba(15,10,28,.72);border:3px solid #110b22}
+.rosterTop{display:flex;justify-content:space-between;gap:12px;font-size:9px;line-height:1.5}
+.rosterRow.active{outline:4px solid #00d9ff}
+.roster .hpOuter{height:15px;margin-top:6px;border-width:3px}
+.error{color:#ff9eaa}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="waiting" class="waiting pixel">A ligar ao HORXS...</div>
+
+  <div id="full" class="full pixel hidden">
+    <div class="kicker">É A VEZ DE</div>
+    <div id="fullName" class="name">—</div>
+    <div class="meta"><span id="fullRound">RODADA 1</span><span id="fullHpMeta">HP —</span></div>
+    <div class="hpArea">
+      <div id="fullHpText" class="hpText">HP 0 / 0</div>
+      <div class="hpOuter"><div id="fullHpBar" class="hpInner" style="width:0%"></div></div>
+    </div>
+    <div id="fullEffects" class="effects"></div>
+  </div>
+
+  <div id="minimal" class="minimal pixel hidden">
+    <div class="kicker">É A VEZ DE</div>
+    <div id="minimalName" class="name">—</div>
+  </div>
+
+  <div id="roster" class="roster pixel hidden">
+    <div class="rosterTitle">HP DOS PERSONAGENS</div>
+    <div id="rosterList"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  const session = params.get("session");
+  const mode = ["full","minimal","roster"].includes(params.get("mode")) ? params.get("mode") : "full";
+  const encodedCfg = params.get("cfg");
+
+  const $ = id => document.getElementById(id);
+  const waiting = $("waiting");
+
+  function decodeConfig(value){
+    let s = value.replace(/-/g,"+").replace(/_/g,"/");
+    while (s.length % 4) s += "=";
+    const binary = atob(s);
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+
+  function fail(message){
+    waiting.classList.remove("hidden");
+    waiting.classList.add("error");
+    waiting.textContent = message;
+  }
+
+  function hpInfo(char){
+    const max = Math.max(1, Number(char?.maxHp) || 1);
+    const current = Math.max(0, Number(char?.currentHp) || 0);
+    const percent = Math.max(0, Math.min(100, (current / max) * 100));
+    const cls = current <= 0 ? "dead" : percent <= 25 ? "critical" : percent <= 50 ? "low" : "";
+    return {max,current,percent,cls};
+  }
+
+  function esc(value){
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));
+  }
+
+  function render(data){
+    if (!data || !Array.isArray(data.characters)) {
+      waiting.classList.remove("hidden");
+      waiting.textContent = "À espera de dados do combate...";
+      return;
+    }
+
+    waiting.classList.add("hidden");
+    $("full").classList.toggle("hidden", mode !== "full");
+    $("minimal").classList.toggle("hidden", mode !== "minimal");
+    $("roster").classList.toggle("hidden", mode !== "roster");
+
+    const current = data.started ? data.characters[data.currentIndex] : null;
+
+    if (mode === "full") {
+      if (!current) {
+        $("fullName").textContent = "COMBATE NÃO INICIADO";
+        $("fullHpMeta").textContent = "";
+        $("fullHpText").textContent = "";
+        $("fullHpBar").style.width = "0%";
+        $("fullEffects").innerHTML = "";
+        return;
+      }
+
+      const hp = hpInfo(current);
+      $("fullName").textContent = current.name;
+      $("fullRound").textContent = `RODADA ${data.round || 1}`;
+      $("fullHpMeta").textContent = `HP ${hp.current}/${hp.max}`;
+      $("fullHpText").textContent = `HP ${hp.current} / ${hp.max}`;
+      $("fullHpBar").style.width = `${hp.percent}%`;
+      $("fullHpBar").className = `hpInner ${hp.cls}`;
+
+      const effects = (data.effects || []).filter(e => e.characterId === current.id);
+      $("fullEffects").innerHTML = effects.length
+        ? effects.map(e => `<div class="effect">${esc(e.name)} · ${Number(e.turns)||0}T</div>`).join("")
+        : `<div class="effect">SEM EFEITOS</div>`;
+    }
+
+    if (mode === "minimal") {
+      $("minimalName").textContent = current ? current.name : "COMBATE NÃO INICIADO";
+    }
+
+    if (mode === "roster") {
+      $("rosterList").innerHTML = data.characters.length
+        ? data.characters.map((char, i) => {
+            const hp = hpInfo(char);
+            return `<div class="rosterRow ${data.started && i === data.currentIndex ? "active" : ""}">
+              <div class="rosterTop"><span>${esc(char.name)}</span><span>${hp.current}/${hp.max}</span></div>
+              <div class="hpOuter"><div class="hpInner ${hp.cls}" style="width:${hp.percent}%"></div></div>
+            </div>`;
+          }).join("")
+        : `<div class="effect">SEM PERSONAGENS</div>`;
+    }
+  }
+
+  async function start(){
+    if (!session || !encodedCfg) return fail("Link OBS inválido: falta sessão ou configuração.");
+    try {
+      const cfg = decodeConfig(encodedCfg);
+      const app = firebase.initializeApp(cfg, `overlay-${Date.now()}`);
+      await app.auth().signInAnonymously();
+      const db = app.database();
+      db.ref(`horxsSessions/${session}`).on("value", snap => render(snap.val()), err => fail(`Erro Firebase: ${err.message}`));
+    } catch (err) {
+      fail(`Erro ao ligar: ${err.message}`);
+    }
+  }
+
+  start();
+})();
+</script>
+</body>
+</html>
