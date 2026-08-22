@@ -98,7 +98,7 @@
 
   .grid{
     display:grid;
-    grid-template-columns: 1fr 1.4fr;
+    grid-template-columns: 1.2fr 1fr;
     gap:20px;
   }
 
@@ -119,25 +119,42 @@
     display:block;
     margin:0 0 8px;
     color:#ffe99a;
-    font-size:10px;
+    font-size:11px;
     line-height:1.6;
   }
 
   input,select{
     width:100%;
-    padding:14px 12px;
+    min-width:0;
+    min-height:52px;
+    padding:14px 14px;
     border:4px solid var(--borderDark);
     background:#151024;
-    color:var(--text);
+    color:#fffdf2;
     border-radius:0;
     outline:none;
-    font-family:"Press Start 2P", monospace;
-    font-size:10px;
+    font-family:Consolas, "Courier New", monospace;
+    font-size:15px;
+    font-weight:800;
+    letter-spacing:.2px;
     box-shadow: inset 0 0 0 4px #392a5f;
   }
 
+  select{
+    cursor:pointer;
+    padding-right:34px;
+  }
+
+  option{
+    background:#151024;
+    color:#fffdf2;
+    font-family:Consolas, "Courier New", monospace;
+    font-size:15px;
+  }
+
   input::placeholder{
-    color:#9b8bb9;
+    color:#b9a9d3;
+    opacity:1;
   }
 
   input:focus, select:focus{
@@ -186,17 +203,36 @@
 
   .characterCreate{
     display:grid;
-    grid-template-columns:1.25fr .5fr .5fr .65fr auto;
-    gap:10px;
+    grid-template-columns:1fr 1fr 1.2fr;
+    grid-template-areas:
+      "name name name"
+      "current max role"
+      "add add add";
+    gap:12px;
     align-items:end;
   }
 
+  .characterCreate .field-name{grid-area:name}
+  .characterCreate .field-current{grid-area:current}
+  .characterCreate .field-max{grid-area:max}
+  .characterCreate .field-role{grid-area:role}
+  .characterCreate .add-character{grid-area:add;width:100%}
+
   .hpManager{
     display:grid;
-    grid-template-columns:1.2fr .55fr auto auto;
-    gap:10px;
+    grid-template-columns:1fr 1fr;
+    grid-template-areas:
+      "person person"
+      "amount amount"
+      "damage heal";
+    gap:12px;
     align-items:end;
   }
+
+  .hpManager .field-person{grid-area:person}
+  .hpManager .field-amount{grid-area:amount}
+  .hpManager .damage-action{grid-area:damage;width:100%}
+  .hpManager .heal-action{grid-area:heal;width:100%}
 
   .hpPreview{
     margin-top:12px;
@@ -237,10 +273,19 @@
 
   .effectForm{
     display:grid;
-    grid-template-columns:1.2fr .55fr 1fr auto;
-    gap:10px;
+    grid-template-columns:.55fr 1.45fr;
+    grid-template-areas:
+      "effectname effectname"
+      "turns character"
+      "effectadd effectadd";
+    gap:12px;
     align-items:end;
   }
+
+  .effectForm .field-effect-name{grid-area:effectname}
+  .effectForm .field-turns{grid-area:turns}
+  .effectForm .field-effect-character{grid-area:character}
+  .effectForm .add-effect{grid-area:effectadd;width:100%}
 
   .wide{grid-column:auto}
 
@@ -573,22 +618,51 @@
   }
 
   @media (max-width: 760px){
-    .characterCreate,
-    .hpManager,
-    .effectForm{
+    .characterCreate{
+      grid-template-columns:1fr 1fr;
+      grid-template-areas:
+        "name name"
+        "current max"
+        "role role"
+        "add add";
+    }
+
+    .hpManager{
       grid-template-columns:1fr 1fr;
     }
-    .effectForm .wide{
-      grid-column:1 / -1;
+
+    .effectForm{
+      grid-template-columns:1fr 1.4fr;
     }
   }
 
   @media (max-width: 540px){
     .formRow{grid-template-columns:1fr}
-    .characterCreate,
-    .hpManager,
-    .effectForm{grid-template-columns:1fr}
-    .effectForm .wide{grid-column:auto}
+    .characterCreate{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "name"
+        "current"
+        "max"
+        "role"
+        "add";
+    }
+    .hpManager{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "person"
+        "amount"
+        "damage"
+        "heal";
+    }
+    .effectForm{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "effectname"
+        "turns"
+        "character"
+        "effectadd";
+    }
     .stack button,.toolbar button{flex:1}
     .miniBtns{flex-wrap:wrap}
     .effect{
@@ -664,19 +738,19 @@
       <h2>PERSONAGENS</h2>
 
       <div class="characterCreate">
-        <div>
+        <div class="field-name">
           <label>Nome</label>
           <input id="characterName" placeholder="Nome do personagem..." autocomplete="off">
         </div>
-        <div>
+        <div class="field-current">
           <label>HP atual</label>
           <input id="characterCurrentHp" type="number" min="0" value="20">
         </div>
-        <div>
+        <div class="field-max">
           <label>HP máximo</label>
           <input id="characterMaxHp" type="number" min="1" value="20">
         </div>
-        <div>
+        <div class="field-role">
           <label>Cargo</label>
           <select id="characterRole">
             <option value="PLAYER">PLAYER</option>
@@ -685,7 +759,7 @@
             <option value="BOSS">BOSS</option>
           </select>
         </div>
-        <button id="addCharacterBtn">Adicionar</button>
+        <button class="add-character" id="addCharacterBtn">Adicionar personagem</button>
       </div>
 
       <div id="characterList" class="list"></div>
@@ -698,16 +772,16 @@
       <div style="margin-top:24px">
         <h2>GESTÃO DE HP</h2>
         <div class="hpManager">
-          <div>
+          <div class="field-person">
             <label>Personagem</label>
             <select id="hpCharacter"></select>
           </div>
-          <div>
+          <div class="field-amount">
             <label>Quantidade</label>
             <input id="hpAmount" type="number" min="1" value="5">
           </div>
-          <button class="danger" id="damageBtn">Dar dano</button>
-          <button class="success" id="healBtn">Recuperar HP</button>
+          <button class="danger damage-action" id="damageBtn">Dar dano</button>
+          <button class="success heal-action" id="healBtn">Recuperar HP</button>
         </div>
         <div id="hpPreview" class="hpPreview">Seleciona um personagem.</div>
       </div>
@@ -715,22 +789,22 @@
       <div style="margin-top:24px">
         <h2>ADICIONAR EFEITO</h2>
         <div class="effectForm">
-          <div class="wide">
+          <div class="wide field-effect-name">
             <label>Nome do efeito</label>
             <input id="effectName" placeholder="Ex.: Envenenado">
           </div>
 
-          <div>
+          <div class="field-turns">
             <label>Turnos</label>
             <input id="effectTurns" type="number" min="1" value="3">
           </div>
 
-          <div>
+          <div class="field-effect-character">
             <label>Personagem</label>
             <select id="effectCharacter"></select>
           </div>
 
-          <button id="addEffectBtn">+ Efeito</button>
+          <button class="add-effect" id="addEffectBtn">+ Adicionar efeito</button>
         </div>
       </div>
     </section>
