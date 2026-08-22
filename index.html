@@ -367,19 +367,69 @@
 
   .effectForm{
     display:grid;
-    grid-template-columns:.55fr 1.45fr;
+    grid-template-columns:.75fr 1.25fr;
     grid-template-areas:
       "effectname effectname"
-      "turns character"
+      "curse curse"
+      "turns targettype"
+      "target target"
       "effectadd effectadd";
     gap:12px;
     align-items:end;
   }
 
   .effectForm .field-effect-name{grid-area:effectname}
+  .effectForm .field-curse{grid-area:curse}
   .effectForm .field-turns{grid-area:turns}
-  .effectForm .field-effect-character{grid-area:character}
+  .effectForm .field-target-type{grid-area:targettype}
+  .effectForm .field-effect-target{grid-area:target}
   .effectForm .add-effect{grid-area:effectadd;width:100%}
+
+  .curseToggle{
+    border:4px solid var(--borderDark);
+    background:#34162d;
+    padding:11px;
+  }
+
+  .curseToggle label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:0;
+    color:#ffc1d5;
+    cursor:pointer;
+    font-size:9px;
+    line-height:1.7;
+  }
+
+  .curseToggle input[type="checkbox"]{
+    width:22px;
+    height:22px;
+    min-width:22px;
+    padding:0;
+    margin:0;
+    box-shadow:none;
+    accent-color:#ff4f9a;
+  }
+
+  .curseHint{
+    display:block;
+    margin-top:4px;
+    color:#d9a9c1;
+    font-size:8px;
+    line-height:1.6;
+  }
+
+  .turns.curse{
+    background:#4b173d;
+    color:#ffb6d2;
+    border-color:#6e214f;
+  }
+
+  .effect.is-curse{
+    border-color:#6e214f;
+    box-shadow:inset 0 0 0 2px rgba(255,79,154,.10);
+  }
 
   .wide{grid-column:auto}
 
@@ -1158,12 +1208,33 @@
             <input id="effectName" placeholder="Ex.: Envenenado">
           </div>
 
+          <div class="field-curse curseToggle">
+            <label>
+              <input id="effectCurse" type="checkbox">
+              <span>
+                Tornar efeito uma MALDIÇÃO
+                <span class="curseHint">A maldição tem duração infinita e não perde turnos durante o combate.</span>
+              </span>
+            </label>
+          </div>
+
           <div class="field-turns">
             <label>Turnos</label>
             <input id="effectTurns" type="number" min="1" value="3">
           </div>
 
-          <div class="field-effect-character">
+          <div class="field-target-type">
+            <label>Tipo de alvo</label>
+            <select id="effectTargetType">
+              <option value="character">Personagem específica</option>
+              <option value="players">Todos os PLAYER</option>
+              <option value="npcs">Todos os NPC</option>
+              <option value="players_npcs">Todos os PLAYER + NPC</option>
+              <option value="bosses">Todos os BOSS</option>
+            </select>
+          </div>
+
+          <div class="field-effect-target" id="effectCharacterWrap">
             <label>Personagem</label>
             <select id="effectCharacter"></select>
           </div>
@@ -1277,6 +1348,9 @@
   const hpPreview = $("hpPreview");
   const effectName = $("effectName");
   const effectTurns = $("effectTurns");
+  const effectCurse = $("effectCurse");
+  const effectTargetType = $("effectTargetType");
+  const effectCharacterWrap = $("effectCharacterWrap");
   const effectCharacter = $("effectCharacter");
   const effectsList = $("effectsList");
   const turnName = $("turnName");
@@ -1715,6 +1789,10 @@
       if (saved && Array.isArray(saved.characters)) {
         state = {...state, ...saved};
         state.overlayVisible = saved.overlayVisible !== false;
+        state.effects = Array.isArray(state.effects)
+          ? state.effects.map(e => ({...e, isCurse:Boolean(e.isCurse)}))
+          : [];
+
         state.characters = state.characters.map(c => {
           const maxHp = Number.isFinite(Number(c.maxHp)) && Number(c.maxHp) > 0 ? Number(c.maxHp) : 20;
           const currentHp = Number.isFinite(Number(c.currentHp))
@@ -2017,6 +2095,45 @@
     }).join("");
   }
 
+  function updateEffectCurseUi() {
+    const curse = effectCurse.checked;
+    effectTurns.disabled = curse;
+    effectTurns.title = curse ? "Maldições não têm duração em turnos." : "";
+  }
+
+  function updateEffectTargetUi() {
+    const specific = effectTargetType.value === "character";
+    effectCharacterWrap.style.display = specific ? "" : "none";
+  }
+
+  function effectTargetsFor(type) {
+    if (type === "character") {
+      const char = state.characters.find(c => c.id === effectCharacter.value);
+      return char ? [char] : [];
+    }
+
+    if (type === "players") {
+      return state.characters.filter(c => normalizeRole(c.role) === "PLAYER");
+    }
+
+    if (type === "npcs") {
+      return state.characters.filter(c => normalizeRole(c.role) === "NPC");
+    }
+
+    if (type === "players_npcs") {
+      return state.characters.filter(c => {
+        const role = normalizeRole(c.role);
+        return role === "PLAYER" || role === "NPC";
+      });
+    }
+
+    if (type === "bosses") {
+      return state.characters.filter(c => normalizeRole(c.role) === "BOSS");
+    }
+
+    return [];
+  }
+
   function render() {
     roundEl.textContent = state.round;
     renderLiveOverlayControl();
@@ -2083,6 +2200,8 @@
     }
 
     renderHpPreview();
+    updateEffectCurseUi();
+    updateEffectTargetUi();
 
     if (state.started && state.characters[state.currentIndex]) {
       const current = state.characters[state.currentIndex];
@@ -2108,13 +2227,15 @@
       state.effects.forEach(effect => {
         const character = state.characters.find(c => c.id === effect.characterId);
         const row = document.createElement("div");
-        row.className = "effect";
+        row.className = "effect" + (effect.isCurse ? " is-curse" : "");
         row.innerHTML = `
           <div>
-            <strong>${escapeHTML(effect.name)}</strong>
+            <strong>${escapeHTML(effect.name)}${effect.isCurse ? " ☠" : ""}</strong>
             <small>${character ? `${escapeHTML(character.name)} [${normalizeRole(character.role)}]` : "Personagem removido"}</small>
           </div>
-          <div class="turns">${effect.turns} turno${effect.turns === 1 ? "" : "s"}</div>
+          <div class="turns ${effect.isCurse ? "curse" : ""}">
+            ${effect.isCurse ? "∞ MALDIÇÃO" : `${effect.turns} turno${effect.turns === 1 ? "" : "s"}`}
+          </div>
           <button class="danger" data-effect-remove="${effect.id}">X</button>
         `;
         effectsList.appendChild(row);
@@ -2229,6 +2350,8 @@
     const expired = [];
 
     state.effects.forEach(effect => {
+      if (effect.isCurse) return;
+
       effect.turns--;
 
       if (effect.turns <= 0) {
@@ -2363,21 +2486,50 @@
 
   function addEffect() {
     const name = effectName.value.trim();
-    const turns = Math.floor(Number(effectTurns.value));
-    const characterId = effectCharacter.value;
+    const isCurse = Boolean(effectCurse.checked);
+    const turns = isCurse ? null : Math.floor(Number(effectTurns.value));
+    const targetType = effectTargetType.value;
 
     if (!name) return notice("Escreve o nome do efeito.");
-    if (!characterId) return notice("Escolhe um personagem.");
-    if (!Number.isFinite(turns) || turns < 1) return notice("Os turnos têm de ser 1 ou mais.");
+    if (!isCurse && (!Number.isFinite(turns) || turns < 1)) {
+      return notice("Os turnos têm de ser 1 ou mais.");
+    }
 
-    const char = state.characters.find(c => c.id === characterId);
+    const targets = effectTargetsFor(targetType);
+
+    if (!targets.length) {
+      if (targetType === "character") return notice("Escolhe um personagem.");
+      return notice("Não existem personagens nesse grupo.");
+    }
+
     checkpoint();
-    state.effects.push({id: uid(), name, turns, characterId});
-    addHistory(`${char.name} recebeu "${name}" por ${turns} turno(s).`);
+
+    const groupId = uid();
+
+    targets.forEach(char => {
+      state.effects.push({
+        id: uid(),
+        groupId,
+        name,
+        turns: isCurse ? null : turns,
+        isCurse,
+        characterId: char.id
+      });
+    });
+
+    const durationText = isCurse ? "como MALDIÇÃO infinita" : `por ${turns} turno(s)`;
+
+    if (targets.length === 1) {
+      addHistory(`${targets[0].name} recebeu "${name}" ${durationText}.`);
+      notice(`${name} aplicado a ${targets[0].name}.`);
+    } else {
+      const names = targets.map(c => c.name).join(", ");
+      addHistory(`"${name}" foi aplicado a ${targets.length} personagens ${durationText}: ${names}.`);
+      notice(`${name} aplicado a ${targets.length} personagens.`);
+    }
 
     effectName.value = "";
     render();
-    notice(`${name} aplicado a ${char.name}.`);
   }
 
   function removeEffect(id) {
@@ -2477,6 +2629,8 @@
   $("prevBtn").addEventListener("click", previousTurn);
   $("resetTurnBtn").addEventListener("click", resetOrder);
   $("addEffectBtn").addEventListener("click", addEffect);
+  effectCurse.addEventListener("change", updateEffectCurseUi);
+  effectTargetType.addEventListener("change", updateEffectTargetUi);
   $("damageBtn").addEventListener("click", () => changeHp("damage"));
   $("healBtn").addEventListener("click", () => changeHp("heal"));
   $("undoBtn").addEventListener("click", undo);
@@ -2607,6 +2761,8 @@
 
   load();
   updateBossConfigVisibility();
+  updateEffectCurseUi();
+  updateEffectTargetUi();
   applyPanelVisibility();
   discordBridgeCode.textContent = discordBridgeId;
   renderLibrary();
