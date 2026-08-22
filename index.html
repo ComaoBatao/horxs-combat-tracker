@@ -208,6 +208,7 @@
       "name name name"
       "current max role"
       "image image image"
+      "bossconfig bossconfig bossconfig"
       "add add add";
     gap:12px;
     align-items:end;
@@ -219,6 +220,52 @@
   .characterCreate .field-role{grid-area:role}
   .characterCreate .field-image{grid-area:image}
   .characterCreate .add-character{grid-area:add;width:100%}
+
+  .bossConfig{
+    grid-area:bossconfig;
+    display:none;
+    border:4px solid var(--borderDark);
+    background:#35182d;
+    padding:12px;
+  }
+
+  .bossConfig.show{display:block}
+
+  .bossConfigTitle{
+    color:#ff9fbd;
+    font-size:10px;
+    line-height:1.6;
+    margin-bottom:9px;
+  }
+
+  .bossConfig label{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    color:#ffe7ef;
+    font-size:9px;
+    line-height:1.7;
+    margin:0;
+    cursor:pointer;
+  }
+
+  .bossConfig input[type="checkbox"]{
+    width:22px;
+    height:22px;
+    min-width:22px;
+    padding:0;
+    margin:0;
+    box-shadow:none;
+    accent-color:#ff4f9a;
+  }
+
+  .bossConfigHelp{
+    display:block;
+    margin-top:5px;
+    color:#ffb5cb;
+    font-size:8px;
+    line-height:1.6;
+  }
 
   .avatarPicker{
     display:grid;
@@ -996,6 +1043,19 @@
           </div>
         </div>
 
+        <div class="bossConfig" id="bossConfig">
+          <div class="bossConfigTitle">CONFIGURAÇÃO DE BOSS</div>
+          <label>
+            <input id="bossHideMaxHp" type="checkbox">
+            <span>
+              Desativar visibilidade do HP máximo deste boss no overlay.
+              <span class="bossConfigHelp">
+                Ligado: HP atual / ??? &nbsp; • &nbsp; Desligado: HP atual / HP máximo
+              </span>
+            </span>
+          </label>
+        </div>
+
         <div class="libraryActions" style="grid-area:add">
           <button class="add-character" id="addCharacterBtn">Adicionar personagem</button>
           <button class="secondary" id="saveLibraryBtn">Guardar personagem</button>
@@ -1155,6 +1215,8 @@
   const characterCurrentHp = $("characterCurrentHp");
   const characterMaxHp = $("characterMaxHp");
   const characterRole = $("characterRole");
+  const bossConfig = $("bossConfig");
+  const bossHideMaxHp = $("bossHideMaxHp");
   const characterImage = $("characterImage");
   const avatarPreview = $("avatarPreview");
   const avatarPreviewImg = $("avatarPreviewImg");
@@ -1207,7 +1269,8 @@
         maxHp: Math.max(1, Number(item.maxHp) || 20),
         role: ["PLAYER","NPC","ENEMY","BOSS"].includes(item.role) ? item.role : "PLAYER",
         avatar: safeAvatarData(item.avatar),
-        discordUserId: String(item.discordUserId || "")
+        discordUserId: String(item.discordUserId || ""),
+        hideMaxHpOverlay: Boolean(item.hideMaxHpOverlay)
       }));
     } catch {
       return [];
@@ -1581,7 +1644,8 @@
             role,
             avatar,
             libraryId: String(c.libraryId || ""),
-            discordUserId: String(c.discordUserId || "")
+            discordUserId: String(c.discordUserId || ""),
+            hideMaxHpOverlay: Boolean(c.hideMaxHpOverlay)
           };
         });
       }
@@ -1692,6 +1756,12 @@
     return ["PLAYER","NPC","ENEMY","BOSS"].includes(role) ? role : "PLAYER";
   }
 
+  function updateBossConfigVisibility() {
+    const boss = normalizeRole(characterRole.value) === "BOSS";
+    bossConfig.classList.toggle("show", boss);
+    if (!boss) bossHideMaxHp.checked = false;
+  }
+
   function roleClass(role) {
     return normalizeRole(role).toLowerCase();
   }
@@ -1714,7 +1784,8 @@
       maxHp,
       role,
       avatar: pendingCharacterAvatar,
-      discordUserId: preparedLibraryDiscordUserId || ""
+      discordUserId: preparedLibraryDiscordUserId || "",
+      hideMaxHpOverlay: role === "BOSS" ? Boolean(bossHideMaxHp.checked) : false
     };
   }
 
@@ -1723,6 +1794,8 @@
     characterCurrentHp.value = "20";
     characterMaxHp.value = "20";
     characterRole.value = "PLAYER";
+    bossHideMaxHp.checked = false;
+    updateBossConfigVisibility();
     preparedLibraryDiscordUserId = "";
     editingLibraryId = null;
     editingLibrary.classList.remove("show");
@@ -1741,6 +1814,8 @@
     characterCurrentHp.value = item.currentHp;
     characterMaxHp.value = item.maxHp;
     characterRole.value = normalizeRole(item.role);
+    bossHideMaxHp.checked = Boolean(item.hideMaxHpOverlay);
+    updateBossConfigVisibility();
     pendingCharacterAvatar = safeAvatarData(item.avatar);
     characterImage.value = "";
 
@@ -1786,7 +1861,8 @@
         maxHp: char.maxHp,
         role: normalizeRole(char.role),
         avatar: safeAvatarData(char.avatar),
-        discordUserId: String(char.discordUserId || "")
+        discordUserId: String(char.discordUserId || ""),
+        hideMaxHpOverlay: Boolean(char.hideMaxHpOverlay)
       });
       notice(`${char.name} atualizado na biblioteca.`);
     } else {
@@ -1798,7 +1874,8 @@
         maxHp: char.maxHp,
         role: normalizeRole(char.role),
         avatar: safeAvatarData(char.avatar),
-        discordUserId: String(char.discordUserId || "")
+        discordUserId: String(char.discordUserId || ""),
+        hideMaxHpOverlay: Boolean(char.hideMaxHpOverlay)
       });
       char.libraryId = libraryId;
       notice(`${char.name} guardado na biblioteca.`);
@@ -1844,7 +1921,7 @@
           <div class="libraryAvatar">${avatarHtml}</div>
           <div>
             <div class="libraryName">${escapeHTML(item.name)}</div>
-            <div class="libraryMeta">${normalizeRole(item.role)} • HP ${item.currentHp}/${item.maxHp}${item.discordUserId ? " • Discord associado" : ""}</div>
+            <div class="libraryMeta">${normalizeRole(item.role)} • HP ${item.currentHp}/${item.maxHp}${normalizeRole(item.role) === "BOSS" && item.hideMaxHpOverlay ? " • Overlay: HP/???" : ""}${item.discordUserId ? " • Discord associado" : ""}</div>
           </div>
           <div class="libraryButtons">
             <button class="success" data-library-prepare="${item.id}">Preparar</button>
@@ -1877,7 +1954,7 @@
           ${avatarHtml}
           <div class="hpWrap">
             <div class="charName" data-character-name-id="${char.id}">${escapeHTML(char.name)} <span class="roleBadge ${roleClass(role)}">${role}</span></div>
-            <div class="hpText">HP ${char.currentHp} / ${char.maxHp}</div>
+            <div class="hpText">HP ${char.currentHp} / ${char.maxHp}${role === "BOSS" ? ` • Overlay: ${char.hideMaxHpOverlay ? "HP / ???" : "HP / máximo"}` : ""}</div>
             <div class="hpBarOuter">
               <div class="hpBarInner ${hpClass}" style="width:${hpPercent}%"></div>
             </div>
@@ -1885,6 +1962,7 @@
           <div class="miniBtns">
             <button class="secondary" data-action="up" data-id="${char.id}" title="Subir">↑</button>
             <button class="secondary" data-action="down" data-id="${char.id}" title="Descer">↓</button>
+            ${role === "BOSS" ? `<button class="warning" data-action="bosshp" data-id="${char.id}" title="Alternar HP máximo no overlay">${char.hideMaxHpOverlay ? "???" : "HP"}</button>` : ""}
             <button class="success" data-action="save" data-id="${char.id}" title="Guardar na biblioteca">S</button>
             <button class="danger" data-action="remove" data-id="${char.id}" title="Remover">X</button>
           </div>
@@ -1998,7 +2076,8 @@
       role,
       avatar: pendingCharacterAvatar,
       libraryId: editingLibraryId || "",
-      discordUserId: preparedLibraryDiscordUserId || ""
+      discordUserId: preparedLibraryDiscordUserId || "",
+      hideMaxHpOverlay: role === "BOSS" ? Boolean(bossHideMaxHp.checked) : false
     });
 
     addHistory(`+ ${name} [${role}] entrou com ${currentHp}/${maxHp} HP.`);
@@ -2174,6 +2253,28 @@
     render();
   }
 
+  function toggleBossMaxHpOverlay(id) {
+    const char = state.characters.find(c => c.id === id);
+    if (!char || normalizeRole(char.role) !== "BOSS") return;
+
+    checkpoint();
+    char.hideMaxHpOverlay = !Boolean(char.hideMaxHpOverlay);
+
+    if (char.libraryId) {
+      const saved = characterLibrary.find(item => item.id === char.libraryId);
+      if (saved) {
+        saved.hideMaxHpOverlay = Boolean(char.hideMaxHpOverlay);
+        saveCharacterLibrary();
+      }
+    }
+
+    addHistory(`${char.name}: HP máximo no overlay ${char.hideMaxHpOverlay ? "ocultado" : "visível"}.`);
+    render();
+    notice(char.hideMaxHpOverlay
+      ? `${char.name}: HP máximo ocultado no overlay.`
+      : `${char.name}: HP máximo visível no overlay.`);
+  }
+
   function addEffect() {
     const name = effectName.value.trim();
     const turns = Math.floor(Number(effectTurns.value));
@@ -2279,6 +2380,8 @@
   });
 
   $("addCharacterBtn").addEventListener("click", addCharacter);
+  characterRole.addEventListener("change", updateBossConfigVisibility);
+
   characterName.addEventListener("keydown", e => {
     if (e.key === "Enter") addCharacter();
   });
@@ -2371,6 +2474,7 @@
     const id = btn.dataset.id;
     if (btn.dataset.action === "up") moveCharacter(id, -1);
     if (btn.dataset.action === "down") moveCharacter(id, 1);
+    if (btn.dataset.action === "bosshp") toggleBossMaxHpOverlay(id);
     if (btn.dataset.action === "save") saveActiveCharacterToLibrary(id);
     if (btn.dataset.action === "remove") removeCharacter(id);
   });
@@ -2406,6 +2510,7 @@
   });
 
   load();
+  updateBossConfigVisibility();
   applyPanelVisibility();
   discordBridgeCode.textContent = discordBridgeId;
   renderLibrary();
