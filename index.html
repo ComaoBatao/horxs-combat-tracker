@@ -798,6 +798,45 @@
     margin-top:14px;
   }
 
+  .liveOverlayControl{
+    margin-top:14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    border:4px solid var(--borderDark);
+    background:#171024;
+    padding:12px;
+  }
+
+  .liveOverlayTitle{
+    color:#fff1a8;
+    font-size:10px;
+    line-height:1.6;
+    margin-bottom:5px;
+  }
+
+  .liveOverlayStatus{
+    color:#91f0ad;
+    font-size:9px;
+    line-height:1.7;
+  }
+
+  .liveOverlayStatus.is-hidden{
+    color:#ff7e8c;
+  }
+
+  #toggleLiveOverlayBtn.overlay-visible{
+    background:#c54357;
+    color:#fff;
+  }
+
+  #toggleLiveOverlayBtn.overlay-hidden{
+    background:#2baa65;
+    color:#fff;
+  }
+
   .sessionCode{
     display:inline-block;
     color:#8af2ff;
@@ -845,6 +884,8 @@
 
   @media (max-width: 540px){
     .obsControls{grid-template-columns:1fr}
+    .liveOverlayControl{align-items:stretch}
+    .liveOverlayControl button{width:100%}
   }
 
   @media (max-width: 980px){
@@ -957,6 +998,14 @@
       <button class="secondary" id="newSessionBtn">Nova sessão</button>
       <button class="success" id="copyOverlayBtn">Copiar link OBS</button>
       <button class="secondary" id="previewOverlayBtn">Abrir preview</button>
+    </div>
+
+    <div class="liveOverlayControl">
+      <div>
+        <div class="liveOverlayTitle">EMISSÃO DOS OVERLAYS</div>
+        <div id="liveOverlayStatus" class="liveOverlayStatus">VISÍVEL NA LIVE</div>
+      </div>
+      <button id="toggleLiveOverlayBtn" class="overlay-visible" type="button">ESCONDER OVERLAY DA LIVE</button>
     </div>
 
     <details class="firebaseSetup" id="firebaseSetup">
@@ -1200,6 +1249,7 @@
     currentIndex: -1,
     round: 1,
     started: false,
+    overlayVisible: true,
     history: []
   };
 
@@ -1240,6 +1290,8 @@
   const firebaseStatus = $("firebaseStatus");
   const sessionCode = $("sessionCode");
   const overlayMode = $("overlayMode");
+  const toggleLiveOverlayBtn = $("toggleLiveOverlayBtn");
+  const liveOverlayStatus = $("liveOverlayStatus");
   const firebaseConfigInput = $("firebaseConfigInput");
   const libraryList = $("libraryList");
   const libraryCount = $("libraryCount");
@@ -1554,13 +1606,45 @@
     render();
   }
 
+  function renderLiveOverlayControl() {
+    const visible = state.overlayVisible !== false;
+
+    liveOverlayStatus.textContent = visible
+      ? "VISÍVEL NA LIVE — alterações aparecem em tempo real"
+      : "OCULTO NA LIVE — podes preparar personagens, bosses e combate sem o público ver";
+
+    liveOverlayStatus.classList.toggle("is-hidden", !visible);
+
+    toggleLiveOverlayBtn.textContent = visible
+      ? "ESCONDER OVERLAY DA LIVE"
+      : "MOSTRAR OVERLAY NA LIVE";
+
+    toggleLiveOverlayBtn.classList.toggle("overlay-visible", visible);
+    toggleLiveOverlayBtn.classList.toggle("overlay-hidden", !visible);
+  }
+
+  function toggleLiveOverlay() {
+    checkpoint();
+    state.overlayVisible = !(state.overlayVisible !== false);
+
+    addHistory(state.overlayVisible
+      ? "Overlay da live foi mostrado."
+      : "Overlay da live foi ocultado.");
+
+    render();
+    notice(state.overlayVisible
+      ? "Overlay mostrado na live."
+      : "Overlay ocultado. Podes preparar o combate.");
+  }
+
   function publicState() {
     return {
       characters: state.characters,
       effects: state.effects,
       currentIndex: state.currentIndex,
       round: state.round,
-      started: state.started
+      started: state.started,
+      overlayVisible: state.overlayVisible !== false
     };
   }
 
@@ -1630,6 +1714,7 @@
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (saved && Array.isArray(saved.characters)) {
         state = {...state, ...saved};
+        state.overlayVisible = saved.overlayVisible !== false;
         state.characters = state.characters.map(c => {
           const maxHp = Number.isFinite(Number(c.maxHp)) && Number(c.maxHp) > 0 ? Number(c.maxHp) : 20;
           const currentHp = Number.isFinite(Number(c.currentHp))
@@ -1934,6 +2019,7 @@
 
   function render() {
     roundEl.textContent = state.round;
+    renderLiveOverlayControl();
 
     characterList.innerHTML = "";
     if (!state.characters.length) {
@@ -2437,6 +2523,8 @@
     notice("Nova sessão criada.");
   });
 
+  toggleLiveOverlayBtn.addEventListener("click", toggleLiveOverlay);
+
   $("copyOverlayBtn").addEventListener("click", async () => {
     try {
       const url = buildOverlayUrl();
@@ -2464,7 +2552,15 @@
   $("clearBtn").addEventListener("click", () => {
     if (!confirm("Apagar personagens, efeitos e histórico?")) return;
     checkpoint();
-    state = {characters:[], effects:[], currentIndex:-1, round:1, started:false, history:[]};
+    state = {
+      characters:[],
+      effects:[],
+      currentIndex:-1,
+      round:1,
+      started:false,
+      overlayVisible: state.overlayVisible !== false,
+      history:[]
+    };
     render();
   });
 
