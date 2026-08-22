@@ -303,10 +303,12 @@
 
   .roleBadge.player{background:#174b73;color:#8fe9ff}
   .roleBadge.npc{background:#514522;color:#ffe98a}
+  .roleBadge.enemy{background:#5b2626;color:#ffb0a0}
   .roleBadge.boss{background:#6d1c39;color:#ff9fbd;box-shadow:0 0 0 2px rgba(255,79,154,.2)}
 
   .char.role-player{border-left:8px solid #36c5f0}
   .char.role-npc{border-left:8px solid #e3bd45}
+  .char.role-enemy{border-left:8px solid #ff7a59}
   .char.role-boss{border-left:8px solid #ff4f9a}
 
   .miniBtns{
@@ -679,6 +681,7 @@
           <select id="characterRole">
             <option value="PLAYER">PLAYER</option>
             <option value="NPC">NPC</option>
+            <option value="ENEMY">ENEMY</option>
             <option value="BOSS">BOSS</option>
           </select>
         </div>
@@ -1007,7 +1010,7 @@
           const currentHp = Number.isFinite(Number(c.currentHp))
             ? Math.max(0, Math.min(Number(c.currentHp), maxHp))
             : maxHp;
-          const role = ["PLAYER","NPC","BOSS"].includes(c.role) ? c.role : "PLAYER";
+          const role = ["PLAYER","NPC","ENEMY","BOSS"].includes(c.role) ? c.role : "PLAYER";
           return {...c, maxHp, currentHp, role};
         });
       }
@@ -1037,7 +1040,7 @@
   }
 
   function normalizeRole(role) {
-    return ["PLAYER","NPC","BOSS"].includes(role) ? role : "PLAYER";
+    return ["PLAYER","NPC","ENEMY","BOSS"].includes(role) ? role : "PLAYER";
   }
 
   function roleClass(role) {
