@@ -17,6 +17,13 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 .kicker{font-size:10px;color:#8af2ff;text-align:center;line-height:1.6}
 .name{font-size:clamp(24px,3vw,44px);text-align:center;line-height:1.4;color:#fff59e;text-shadow:4px 4px 0 #110b22;margin:10px 0 14px;word-break:break-word}
 .meta{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;font-size:10px;line-height:1.7;color:#e8dcff}
+.roleBadge{display:inline-block;padding:5px 8px;border:3px solid #110b22;font-size:8px;line-height:1}
+.role-player{background:#174b73;color:#8fe9ff}
+.role-npc{background:#514522;color:#ffe98a}
+.role-boss{background:#6d1c39;color:#ff9fbd;box-shadow:0 0 0 2px rgba(255,79,154,.2)}
+.rosterRow.player{border-left:7px solid #36c5f0}
+.rosterRow.npc{border-left:7px solid #e3bd45}
+.rosterRow.boss{border-left:7px solid #ff4f9a}
 .hpArea{margin-top:14px}
 .hpText{font-size:11px;line-height:1.6;margin-bottom:7px;text-align:center}
 .hpOuter{height:24px;border:4px solid #110b22;background:#160e27;padding:2px}
@@ -44,7 +51,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
   <div id="full" class="full pixel hidden">
     <div class="kicker">É A VEZ DE</div>
     <div id="fullName" class="name">—</div>
-    <div class="meta"><span id="fullRound">RODADA 1</span><span id="fullHpMeta">HP —</span></div>
+    <div class="meta"><span id="fullRole" class="roleBadge role-player">PLAYER</span><span id="fullRound">RODADA 1</span><span id="fullHpMeta">HP —</span></div>
     <div class="hpArea">
       <div id="fullHpText" class="hpText">HP 0 / 0</div>
       <div class="hpOuter"><div id="fullHpBar" class="hpInner" style="width:0%"></div></div>
@@ -55,6 +62,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
   <div id="minimal" class="minimal pixel hidden">
     <div class="kicker">É A VEZ DE</div>
     <div id="minimalName" class="name">—</div>
+    <div style="text-align:center"><span id="minimalRole" class="roleBadge role-player">PLAYER</span></div>
   </div>
 
   <div id="roster" class="roster pixel hidden">
@@ -98,6 +106,14 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
     return {max,current,percent,cls};
   }
 
+  function roleOf(char){
+    return ["PLAYER","NPC","BOSS"].includes(char?.role) ? char.role : "PLAYER";
+  }
+
+  function roleCss(char){
+    return roleOf(char).toLowerCase();
+  }
+
   function esc(value){
     return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));
   }
@@ -120,6 +136,8 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
       if (!current) {
         $("fullName").textContent = "COMBATE NÃO INICIADO";
         $("fullHpMeta").textContent = "";
+        $("fullRole").textContent = "";
+        $("fullRole").className = "roleBadge hidden";
         $("fullHpText").textContent = "";
         $("fullHpBar").style.width = "0%";
         $("fullEffects").innerHTML = "";
@@ -128,6 +146,9 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 
       const hp = hpInfo(current);
       $("fullName").textContent = current.name;
+      const currentRole = roleOf(current);
+      $("fullRole").textContent = currentRole;
+      $("fullRole").className = `roleBadge role-${roleCss(current)}`;
       $("fullRound").textContent = `RODADA ${data.round || 1}`;
       $("fullHpMeta").textContent = `HP ${hp.current}/${hp.max}`;
       $("fullHpText").textContent = `HP ${hp.current} / ${hp.max}`;
@@ -142,14 +163,18 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 
     if (mode === "minimal") {
       $("minimalName").textContent = current ? current.name : "COMBATE NÃO INICIADO";
+      const r = current ? roleOf(current) : "";
+      $("minimalRole").textContent = r;
+      $("minimalRole").className = current ? `roleBadge role-${roleCss(current)}` : "roleBadge hidden";
     }
 
     if (mode === "roster") {
       $("rosterList").innerHTML = data.characters.length
         ? data.characters.map((char, i) => {
             const hp = hpInfo(char);
-            return `<div class="rosterRow ${data.started && i === data.currentIndex ? "active" : ""}">
-              <div class="rosterTop"><span>${esc(char.name)}</span><span>${hp.current}/${hp.max}</span></div>
+            const role = roleOf(char);
+            return `<div class="rosterRow ${roleCss(char)} ${data.started && i === data.currentIndex ? "active" : ""}">
+              <div class="rosterTop"><span>${esc(char.name)} <span class="roleBadge role-${roleCss(char)}">${role}</span></span><span>${hp.current}/${hp.max}</span></div>
               <div class="hpOuter"><div class="hpInner ${hp.cls}" style="width:${hp.percent}%"></div></div>
             </div>`;
           }).join("")
