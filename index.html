@@ -292,7 +292,10 @@
   }
 
   .avatarPreview img{width:100%;height:100%;object-fit:cover;display:none;image-rendering:auto}
-  .avatarPreview.has-image img{display:block}
+  .avatarPreview.has-image{
+    background:transparent;
+  }
+  .avatarPreview.has-image img{display:block;object-fit:contain}
   .avatarPreview.has-image .avatarPlaceholder{display:none}
 
   .avatarPickerInfo{min-width:0}
@@ -473,9 +476,9 @@
     width:58px;
     height:58px;
     flex:0 0 58px;
-    border:4px solid var(--borderDark);
-    background:#120c20;
-    object-fit:cover;
+    border:4px solid transparent;
+    background:transparent;
+    object-fit:contain;
     image-rendering:auto;
   }
 
@@ -561,7 +564,12 @@
     background:#120c20;overflow:hidden;display:grid;place-items:center;
     color:#8af2ff;font-size:13px;
   }
-  .libraryAvatar img{width:100%;height:100%;object-fit:cover;image-rendering:auto}
+  .libraryAvatar:has(img),
+  .libraryAvatar.has-image{
+    background:transparent;
+    border-color:transparent;
+  }
+  .libraryAvatar img{width:100%;height:100%;object-fit:contain;image-rendering:auto}
   .libraryName{font-size:10px;line-height:1.6;color:#fff1a8;word-break:break-word}
   .libraryMeta{font-size:8px;line-height:1.7;color:#bdaed9}
   .libraryButtons{grid-column:1 / -1;display:flex;gap:7px;flex-wrap:wrap}
@@ -640,7 +648,12 @@
     box-shadow:0 0 0 4px rgba(95,74,150,.55);
   }
   .turnAvatar img{width:100%;height:100%;object-fit:cover;display:none;image-rendering:auto}
-  .turnAvatar.has-image img{display:block}
+  .turnAvatar.has-image{
+    background:transparent;
+    border-color:transparent;
+    box-shadow:none;
+  }
+  .turnAvatar.has-image img{display:block;object-fit:contain}
   .turnAvatar.has-image span{display:none}
 
   .turnName{
@@ -1886,9 +1899,15 @@
     ctx.clearRect(0, 0, 300, 300);
     ctx.drawImage(img, sx, sy, sourceSize, sourceSize, 0, 0, 300, 300);
 
-    let result = canvas.toDataURL("image/webp", 0.80);
+    // PNGs keep PNG output so transparent pixels remain transparent.
+    // JPG uses WEBP to save space; WEBP also supports alpha if needed.
+    if (file.type === "image/png") {
+      return canvas.toDataURL("image/png");
+    }
+
+    let result = canvas.toDataURL("image/webp", 0.84);
     if (!result.startsWith("data:image/webp")) {
-      result = canvas.toDataURL("image/jpeg", 0.82);
+      result = canvas.toDataURL("image/png");
     }
     return result;
   }
@@ -2081,7 +2100,7 @@
 
       return `
         <div class="libraryCard">
-          <div class="libraryAvatar">${avatarHtml}</div>
+          <div class="libraryAvatar ${avatar ? "has-image" : ""}">${avatarHtml}</div>
           <div>
             <div class="libraryName">${escapeHTML(item.name)}</div>
             <div class="libraryMeta">${normalizeRole(item.role)} • HP ${item.currentHp}/${item.maxHp}${normalizeRole(item.role) === "BOSS" && item.hideMaxHpOverlay ? " • Overlay: HP/???" : ""}${item.discordUserId ? " • Discord associado" : ""}</div>
