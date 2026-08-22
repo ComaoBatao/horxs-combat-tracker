@@ -22,7 +22,12 @@ body.overlay-off #roster{
 .full{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);width:min(780px,80vw);padding:20px 24px}
 .overlayPortrait{width:118px;height:118px;margin:10px auto 8px;border:4px solid #110b22;background:#120c20;display:grid;place-items:center;overflow:hidden;color:#8af2ff;font-size:26px;box-shadow:0 0 0 4px rgba(95,74,150,.65)}
 .overlayPortrait img{width:100%;height:100%;object-fit:cover;display:none;image-rendering:auto}
-.overlayPortrait.has-image img{display:block}
+.overlayPortrait.has-image{
+  background:transparent;
+  border-color:transparent;
+  box-shadow:none;
+}
+.overlayPortrait.has-image img{display:block;object-fit:contain}
 .overlayPortrait.has-image span{display:none}
 .kicker{font-size:10px;color:#8af2ff;text-align:center;line-height:1.6}
 .name{font-size:clamp(24px,3vw,44px);text-align:center;line-height:1.4;color:#fff59e;text-shadow:4px 4px 0 #110b22;margin:10px 0 14px;word-break:break-word}
@@ -134,7 +139,11 @@ body.overlay-off #roster{
 .rosterRow{margin:8px 0;padding:8px;background:rgba(15,10,28,.72);border:3px solid #110b22}
 .rosterMain{display:grid;grid-template-columns:48px 1fr;gap:9px;align-items:center}
 .rosterAvatar{width:48px;height:48px;border:3px solid #110b22;background:#120c20;display:grid;place-items:center;overflow:hidden;color:#8af2ff;font-size:12px}
-.rosterAvatar img{width:100%;height:100%;object-fit:cover;image-rendering:auto}
+.rosterAvatar.has-image{
+  background:transparent;
+  border-color:transparent;
+}
+.rosterAvatar img{width:100%;height:100%;object-fit:contain;image-rendering:auto}
 .rosterTop{display:flex;justify-content:space-between;gap:12px;font-size:9px;line-height:1.5}
 .rosterRow.active{outline:4px solid #00d9ff}
 .roster .hpOuter{height:15px;margin-top:6px;border-width:3px}
@@ -303,7 +312,7 @@ body.overlay-off #roster{
   function avatarHtml(char){
     const avatar = avatarData(char);
     return avatar
-      ? `<div class="rosterAvatar"><img src="${esc(avatar)}" alt="${esc(char?.name || "")}"></div>`
+      ? `<div class="rosterAvatar has-image"><img src="${esc(avatar)}" alt="${esc(char?.name || "")}"></div>`
       : `<div class="rosterAvatar">${esc(initialOf(char))}</div>`;
   }
 
