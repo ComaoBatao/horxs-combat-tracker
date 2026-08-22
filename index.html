@@ -186,7 +186,7 @@
 
   .characterCreate{
     display:grid;
-    grid-template-columns:1.35fr .55fr .55fr auto;
+    grid-template-columns:1.25fr .5fr .5fr .65fr auto;
     gap:10px;
     align-items:end;
   }
@@ -289,6 +289,25 @@
     text-overflow:ellipsis;
     white-space:nowrap;
   }
+
+  .roleBadge{
+    display:inline-block;
+    margin-left:8px;
+    padding:4px 6px;
+    border:3px solid var(--borderDark);
+    font-size:8px;
+    line-height:1;
+    vertical-align:middle;
+    text-shadow:none;
+  }
+
+  .roleBadge.player{background:#174b73;color:#8fe9ff}
+  .roleBadge.npc{background:#514522;color:#ffe98a}
+  .roleBadge.boss{background:#6d1c39;color:#ff9fbd;box-shadow:0 0 0 2px rgba(255,79,154,.2)}
+
+  .char.role-player{border-left:8px solid #36c5f0}
+  .char.role-npc{border-left:8px solid #e3bd45}
+  .char.role-boss{border-left:8px solid #ff4f9a}
 
   .miniBtns{
     display:flex;
@@ -655,6 +674,14 @@
           <label>HP máximo</label>
           <input id="characterMaxHp" type="number" min="1" value="20">
         </div>
+        <div>
+          <label>Cargo</label>
+          <select id="characterRole">
+            <option value="PLAYER">PLAYER</option>
+            <option value="NPC">NPC</option>
+            <option value="BOSS">BOSS</option>
+          </select>
+        </div>
         <button id="addCharacterBtn">Adicionar</button>
       </div>
 
@@ -777,6 +804,7 @@
   const characterName = $("characterName");
   const characterCurrentHp = $("characterCurrentHp");
   const characterMaxHp = $("characterMaxHp");
+  const characterRole = $("characterRole");
   const characterList = $("characterList");
   const hpCharacter = $("hpCharacter");
   const hpAmount = $("hpAmount");
@@ -979,7 +1007,8 @@
           const currentHp = Number.isFinite(Number(c.currentHp))
             ? Math.max(0, Math.min(Number(c.currentHp), maxHp))
             : maxHp;
-          return {...c, maxHp, currentHp};
+          const role = ["PLAYER","NPC","BOSS"].includes(c.role) ? c.role : "PLAYER";
+          return {...c, maxHp, currentHp, role};
         });
       }
     } catch {}
@@ -1007,6 +1036,14 @@
       .replaceAll("'", "&#039;");
   }
 
+  function normalizeRole(role) {
+    return ["PLAYER","NPC","BOSS"].includes(role) ? role : "PLAYER";
+  }
+
+  function roleClass(role) {
+    return normalizeRole(role).toLowerCase();
+  }
+
   function render() {
     roundEl.textContent = state.round;
 
@@ -1016,13 +1053,14 @@
     } else {
       state.characters.forEach((char, index) => {
         const row = document.createElement("div");
-        row.className = "char" + (state.started && index === state.currentIndex ? " active" : "");
+        const role = normalizeRole(char.role);
+        row.className = `char role-${roleClass(role)}` + (state.started && index === state.currentIndex ? " active" : "");
         const hpPercent = char.maxHp > 0 ? Math.max(0, Math.min(100, (char.currentHp / char.maxHp) * 100)) : 0;
         const hpClass = char.currentHp <= 0 ? "dead" : hpPercent <= 25 ? "critical" : hpPercent <= 50 ? "low" : "";
         row.innerHTML = `
           <div class="pos">${index + 1}</div>
           <div class="hpWrap">
-            <div class="charName">${escapeHTML(char.name)}</div>
+            <div class="charName">${escapeHTML(char.name)} <span class="roleBadge ${roleClass(role)}">${role}</span></div>
             <div class="hpText">HP ${char.currentHp} / ${char.maxHp}</div>
             <div class="hpBarOuter">
               <div class="hpBarInner ${hpClass}" style="width:${hpPercent}%"></div>
@@ -1049,12 +1087,12 @@
       state.characters.forEach(c => {
         const op1 = document.createElement("option");
         op1.value = c.id;
-        op1.textContent = c.name;
+        op1.textContent = `${c.name} [${normalizeRole(c.role)}]`;
         effectCharacter.appendChild(op1);
 
         const op2 = document.createElement("option");
         op2.value = c.id;
-        op2.textContent = c.name;
+        op2.textContent = `${c.name} [${normalizeRole(c.role)}]`;
         hpCharacter.appendChild(op2);
       });
 
@@ -1072,7 +1110,7 @@
       const effectText = activeEffects.length
         ? `${activeEffects.length} efeito(s) ativo(s)`
         : "Sem efeitos ativos";
-      turnSub.textContent = `HP ${current.currentHp}/${current.maxHp} • ${effectText}`;
+      turnSub.textContent = `${normalizeRole(current.role)} • HP ${current.currentHp}/${current.maxHp} • ${effectText}`;
     } else {
       turnName.textContent = "—";
       turnSub.textContent = state.characters.length
@@ -1091,7 +1129,7 @@
         row.innerHTML = `
           <div>
             <strong>${escapeHTML(effect.name)}</strong>
-            <small>${character ? escapeHTML(character.name) : "Personagem removido"}</small>
+            <small>${character ? `${escapeHTML(character.name)} [${normalizeRole(character.role)}]` : "Personagem removido"}</small>
           </div>
           <div class="turns">${effect.turns} turno${effect.turns === 1 ? "" : "s"}</div>
           <button class="danger" data-effect-remove="${effect.id}">X</button>
@@ -1118,6 +1156,7 @@
     const name = characterName.value.trim();
     const maxHp = Math.floor(Number(characterMaxHp.value));
     const currentHpInput = Math.floor(Number(characterCurrentHp.value));
+    const role = normalizeRole(characterRole.value);
 
     if (!name) return notice("Escreve o nome do personagem.");
     if (!Number.isFinite(maxHp) || maxHp < 1) return notice("O HP máximo tem de ser 1 ou mais.");
@@ -1131,10 +1170,11 @@
       id: uid(),
       name,
       currentHp,
-      maxHp
+      maxHp,
+      role
     });
 
-    addHistory(`+ ${name} entrou com ${currentHp}/${maxHp} HP.`);
+    addHistory(`+ ${name} [${role}] entrou com ${currentHp}/${maxHp} HP.`);
     characterName.value = "";
     render();
     characterName.focus();
@@ -1268,7 +1308,7 @@
     }
 
     const percent = char.maxHp > 0 ? Math.round((char.currentHp / char.maxHp) * 100) : 0;
-    hpPreview.textContent = `${char.name}: ${char.currentHp} / ${char.maxHp} HP (${Math.max(0, percent)}%)`;
+    hpPreview.textContent = `${char.name} [${normalizeRole(char.role)}]: ${char.currentHp} / ${char.maxHp} HP (${Math.max(0, percent)}%)`;
   }
 
   function changeHp(mode) {
