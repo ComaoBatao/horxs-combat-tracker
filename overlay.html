@@ -47,6 +47,34 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 .minimal .name{margin:4px 0 0}
 .roster{position:absolute;left:3%;bottom:5%;width:min(500px,45vw);padding:14px}
 .rosterTitle{font-size:10px;color:#8af2ff;margin-bottom:10px}
+.bossSection{
+  display:none;
+  margin:0 0 14px;
+  padding:10px;
+  background:rgba(63,18,45,.88);
+  border:4px solid #110b22;
+  box-shadow:inset 0 0 0 3px rgba(255,79,154,.12);
+}
+.bossSection.show{display:block}
+.bossSectionTitle{
+  font-size:10px;
+  color:#ff9fbd;
+  text-align:center;
+  line-height:1.5;
+  margin-bottom:8px;
+  text-shadow:2px 2px 0 #110b22;
+}
+.bossRow{
+  margin:8px 0;
+  padding:11px;
+  background:linear-gradient(180deg,rgba(95,25,64,.96),rgba(42,16,39,.96));
+  border:4px solid #110b22;
+}
+.bossRow.active{outline:4px solid #ff4f9a}
+.bossRow .rosterMain{grid-template-columns:58px 1fr}
+.bossRow .rosterAvatar{width:58px;height:58px}
+.bossRow .rosterTop{font-size:10px}
+.bossHp{color:#ffb3ca}
 .rosterRow{margin:8px 0;padding:8px;background:rgba(15,10,28,.72);border:3px solid #110b22}
 .rosterMain{display:grid;grid-template-columns:48px 1fr;gap:9px;align-items:center}
 .rosterAvatar{width:48px;height:48px;border:3px solid #110b22;background:#120c20;display:grid;place-items:center;overflow:hidden;color:#8af2ff;font-size:12px}
@@ -82,6 +110,12 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 
   <div id="roster" class="roster pixel hidden">
     <div class="rosterTitle">HP DOS PERSONAGENS</div>
+
+    <div id="bossSection" class="bossSection">
+      <div class="bossSectionTitle">BOSS</div>
+      <div id="bossList"></div>
+    </div>
+
     <div id="rosterList"></div>
   </div>
 </div>
@@ -225,8 +259,9 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
       $("fullRole").textContent = currentRole;
       $("fullRole").className = `roleBadge role-${roleCss(current)}`;
       $("fullRound").textContent = `RODADA ${data.round || 1}`;
-      $("fullHpMeta").textContent = `HP ${hp.current}/${hp.max}`;
-      $("fullHpText").textContent = `HP ${hp.current} / ${hp.max}`;
+      const visibleMaxHp = currentRole === "BOSS" && current.hideMaxHpOverlay ? "???" : hp.max;
+      $("fullHpMeta").textContent = `HP ${hp.current}/${visibleMaxHp}`;
+      $("fullHpText").textContent = `HP ${hp.current} / ${visibleMaxHp}`;
       $("fullHpBar").style.width = `${hp.percent}%`;
       $("fullHpBar").className = `hpInner ${hp.cls}`;
 
@@ -246,8 +281,32 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
     }
 
     if (mode === "roster") {
-      $("rosterList").innerHTML = data.characters.length
-        ? data.characters.map((char, i) => {
+      const withIndex = data.characters.map((char, i) => ({char, i}));
+      const bosses = withIndex.filter(item => roleOf(item.char) === "BOSS");
+      const others = withIndex.filter(item => roleOf(item.char) !== "BOSS");
+
+      $("bossSection").classList.toggle("show", bosses.length > 0);
+
+      $("bossList").innerHTML = bosses.map(({char, i}) => {
+        const hp = hpInfo(char);
+        const maxText = char.hideMaxHpOverlay ? "???" : hp.max;
+
+        return `<div class="bossRow ${data.started && i === data.currentIndex ? "active" : ""}">
+          <div class="rosterMain">
+            ${avatarHtml(char)}
+            <div>
+              <div class="rosterTop">
+                <span class="${voiceClass(char)}">${esc(char.name)} <span class="roleBadge role-boss">BOSS</span></span>
+                <span class="bossHp">${hp.current}/${maxText}</span>
+              </div>
+              <div class="hpOuter"><div class="hpInner ${hp.cls}" style="width:${hp.percent}%"></div></div>
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+
+      $("rosterList").innerHTML = others.length
+        ? others.map(({char, i}) => {
             const hp = hpInfo(char);
             const role = roleOf(char);
             return `<div class="rosterRow ${roleCss(char)} ${data.started && i === data.currentIndex ? "active" : ""}">
@@ -260,7 +319,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
               </div>
             </div>`;
           }).join("")
-        : `<div class="effect">SEM PERSONAGENS</div>`;
+        : (bosses.length ? "" : `<div class="effect">SEM PERSONAGENS</div>`);
     }
   }
 
