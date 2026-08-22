@@ -436,6 +436,84 @@
     font-size:10px;
   }
 
+  .voice-speaking{color:#fff !important;text-shadow:0 0 8px rgba(255,255,255,.55)}
+  .voice-idle{color:#928aa1 !important}
+  .voice-muted{color:#ff5f70 !important;text-shadow:0 0 8px rgba(255,70,90,.35)}
+
+  .libraryHeader,.discordHeader{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;flex-wrap:wrap;margin-bottom:12px;
+  }
+  .libraryHint,.discordHint{
+    color:#bdaed9;font-size:9px;line-height:1.7;margin:0 0 12px;
+  }
+  .libraryActions{
+    display:flex;gap:10px;flex-wrap:wrap;width:100%;
+  }
+  .libraryActions button{flex:1;min-width:170px}
+  .libraryList{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:10px;margin-top:12px;
+  }
+  .libraryCard{
+    border:4px solid var(--borderDark);background:#201632;padding:10px;
+    display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:center;
+  }
+  .libraryAvatar{
+    width:58px;height:58px;border:3px solid var(--borderDark);
+    background:#120c20;overflow:hidden;display:grid;place-items:center;
+    color:#8af2ff;font-size:13px;
+  }
+  .libraryAvatar img{width:100%;height:100%;object-fit:cover;image-rendering:auto}
+  .libraryName{font-size:10px;line-height:1.6;color:#fff1a8;word-break:break-word}
+  .libraryMeta{font-size:8px;line-height:1.7;color:#bdaed9}
+  .libraryButtons{grid-column:1 / -1;display:flex;gap:7px;flex-wrap:wrap}
+  .libraryButtons button{flex:1;min-width:75px;padding:8px 7px;font-size:8px}
+  .editingLibrary{
+    margin-top:10px;padding:10px;border:4px solid var(--borderDark);
+    background:#38295b;color:#fff1a8;font-size:9px;line-height:1.7;display:none;
+  }
+  .editingLibrary.show{display:block}
+
+  .discordPanel{
+    margin:22px 0;padding:18px;background:var(--panel);
+  }
+  .discordStatusRow{
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    font-size:9px;line-height:1.6;color:#d9cdec;
+  }
+  .bridgeCode{
+    border:3px solid var(--borderDark);background:#130d22;
+    padding:7px 9px;color:#8af2ff;word-break:break-all;
+  }
+  .discordPeople{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:10px;margin-top:14px;
+  }
+  .discordPerson{
+    border:4px solid var(--borderDark);background:#201632;padding:10px;
+  }
+  .discordPersonTop{
+    display:grid;grid-template-columns:42px 1fr auto;gap:9px;align-items:center;
+  }
+  .discordAvatar{
+    width:42px;height:42px;border:3px solid var(--borderDark);
+    background:#120c20;overflow:hidden;display:grid;place-items:center;
+    color:#8af2ff;font-size:11px;
+  }
+  .discordAvatar img{width:100%;height:100%;object-fit:cover;image-rendering:auto}
+  .discordPersonName{font-size:9px;line-height:1.5;color:#fff}
+  .discordState{font-size:8px;line-height:1.5;margin-top:3px}
+  .discordState.speaking{color:#fff}
+  .discordState.idle{color:#928aa1}
+  .discordState.muted{color:#ff5f70}
+  .discordMap{margin-top:9px}
+  .discordMap select{font-size:9px;padding:10px}
+  .bridgeOffline{
+    padding:14px;border:4px dashed #5d4a8f;background:#211834;
+    color:#bdaed9;font-size:9px;line-height:1.8;text-align:center;
+  }
+
   .turnBox{
     background:
       linear-gradient(180deg, #3d2b6a 0%, #2a1d4c 100%);
@@ -821,6 +899,31 @@
     </details>
   </section>
 
+  <section class="discordPanel pixel-box">
+    <div class="discordHeader">
+      <div>
+        <h2 style="margin-bottom:8px">DISCORD / VOICE BRIDGE</h2>
+        <div class="discordStatusRow">
+          <span id="discordDot" class="statusDot waiting"></span>
+          <span id="discordStatus">À espera do Discord Bridge.</span>
+          <span>BRIDGE: <span id="discordBridgeCode" class="bridgeCode">—</span></span>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="secondary" id="copyBridgeBtn">Copiar Bridge ID</button>
+        <button class="warning" id="newBridgeBtn">Novo Bridge ID</button>
+      </div>
+    </div>
+    <p class="discordHint">
+      O bot segue a call onde estás. Associa cada pessoa a uma personagem:
+      <b>branco = a falar</b>, <b>cinzento = em silêncio</b>, <b>vermelho = mutado/deaf</b>.
+    </p>
+    <div id="discordChannelInfo" class="hpPreview">Nenhuma call detetada.</div>
+    <div id="discordPeople" class="discordPeople">
+      <div class="bridgeOffline">Liga o Discord Bridge para aparecerem aqui as pessoas da call.</div>
+    </div>
+  </section>
+
   <div class="grid">
     <section class="card pixel-box">
       <h2>PERSONAGENS</h2>
@@ -864,10 +967,28 @@
           </div>
         </div>
 
-        <button class="add-character" id="addCharacterBtn">Adicionar personagem</button>
+        <div class="libraryActions" style="grid-area:add">
+          <button class="add-character" id="addCharacterBtn">Adicionar personagem</button>
+          <button class="secondary" id="saveLibraryBtn">Guardar personagem</button>
+          <button class="danger" id="cancelLibraryEditBtn" style="display:none">Cancelar edição</button>
+        </div>
       </div>
 
-      <div id="characterList" class="list"></div>
+      <div id="editingLibrary" class="editingLibrary"></div>
+
+      <div style="margin-top:22px">
+        <div class="libraryHeader">
+          <h2 style="margin:0">BIBLIOTECA DE PERSONAGENS</h2>
+          <span id="libraryCount" class="sessionCode">0 guardados</span>
+        </div>
+        <p class="libraryHint">Guarda personagens para reutilizar. “Preparar” devolve os dados ao formulário para poderes alterar HP, cargo, nome ou imagem antes de adicionar.</p>
+        <div id="libraryList" class="libraryList"></div>
+      </div>
+
+      <div style="margin-top:22px">
+        <h2>PERSONAGENS NO COMBATE</h2>
+        <div id="characterList" class="list"></div>
+      </div>
 
       <div class="toolbar" style="margin-top:18px">
         <button class="success" id="startBtn">Iniciar combate</button>
@@ -961,10 +1082,21 @@
   const STORAGE_KEY = "horxs_turn_tracker_pixel_v2";
   const FIREBASE_CONFIG_KEY = "horxs_firebase_config_v1";
   const SESSION_KEY = "horxs_obs_session_v1";
+  const LIBRARY_KEY = "horxs_character_library_v1";
+  const DISCORD_BRIDGE_KEY = "horxs_discord_bridge_v1";
 
   let firebaseConfig = loadFirebaseConfig();
   let sessionId = localStorage.getItem(SESSION_KEY) || createSessionId();
   localStorage.setItem(SESSION_KEY, sessionId);
+
+  let discordBridgeId = localStorage.getItem(DISCORD_BRIDGE_KEY) || (createSessionId() + createSessionId());
+  localStorage.setItem(DISCORD_BRIDGE_KEY, discordBridgeId);
+  let discordBridgeRef = null;
+  let discordVoice = {online:false, channel:null, participants:{}};
+
+  let characterLibrary = loadCharacterLibrary();
+  let editingLibraryId = null;
+  let preparedLibraryDiscordUserId = "";
 
   let firebaseApp = null;
   let firebaseDb = null;
@@ -1017,6 +1149,14 @@
   const sessionCode = $("sessionCode");
   const overlayMode = $("overlayMode");
   const firebaseConfigInput = $("firebaseConfigInput");
+  const libraryList = $("libraryList");
+  const libraryCount = $("libraryCount");
+  const editingLibrary = $("editingLibrary");
+  const discordDot = $("discordDot");
+  const discordStatus = $("discordStatus");
+  const discordBridgeCode = $("discordBridgeCode");
+  const discordChannelInfo = $("discordChannelInfo");
+  const discordPeople = $("discordPeople");
 
 
   function createSessionId() {
@@ -1024,6 +1164,34 @@
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
     return Array.from(bytes, b => alphabet[b % alphabet.length]).join("");
+  }
+
+  function loadCharacterLibrary() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LIBRARY_KEY) || "[]");
+      if (!Array.isArray(raw)) return [];
+      return raw.map(item => ({
+        id: String(item.id || uid()),
+        name: String(item.name || "Personagem"),
+        currentHp: Math.max(0, Number(item.currentHp) || 0),
+        maxHp: Math.max(1, Number(item.maxHp) || 20),
+        role: ["PLAYER","NPC","ENEMY","BOSS"].includes(item.role) ? item.role : "PLAYER",
+        avatar: safeAvatarData(item.avatar),
+        discordUserId: String(item.discordUserId || "")
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  function saveCharacterLibrary() {
+    try {
+      localStorage.setItem(LIBRARY_KEY, JSON.stringify(characterLibrary));
+      return true;
+    } catch {
+      notice("A biblioteca ficou demasiado grande para este navegador.");
+      return false;
+    }
   }
 
   function loadFirebaseConfig() {
@@ -1073,6 +1241,7 @@
     url.searchParams.set("session", sessionId);
     url.searchParams.set("mode", mode);
     url.searchParams.set("cfg", encodeConfig(firebaseConfig));
+    url.searchParams.set("bridge", discordBridgeId);
     return url.toString();
   }
 
@@ -1108,6 +1277,7 @@
       await firebaseApp.auth().signInAnonymously();
       firebaseDb = firebaseApp.database();
       firebaseSessionRef = firebaseDb.ref(`horxsSessions/${sessionId}`);
+      connectDiscordBridge();
 
       firebaseDb.ref(".info/connected").on("value", snap => {
         if (snap.val() === true) {
@@ -1123,6 +1293,132 @@
       firebaseReady = false;
       setFirebaseStatus("offline", `Erro Firebase: ${err.message}`);
     }
+  }
+
+  function voiceStateForCharacter(char) {
+    const userId = String(char?.discordUserId || "");
+    return userId ? (discordVoice?.participants?.[userId] || null) : null;
+  }
+
+  function voiceClassForCharacter(char) {
+    const v = voiceStateForCharacter(char);
+    if (!v) return "";
+    if (v.muted || v.deafened) return "voice-muted";
+    if (v.speaking) return "voice-speaking";
+    return "voice-idle";
+  }
+
+  function connectDiscordBridge() {
+    discordBridgeCode.textContent = discordBridgeId;
+    if (!firebaseDb) return;
+
+    if (discordBridgeRef) discordBridgeRef.off();
+    discordBridgeRef = firebaseDb.ref(`discordBridges/${discordBridgeId}`);
+    discordBridgeRef.on("value", snap => {
+      const data = snap.val() || {};
+      discordVoice = {
+        online: Boolean(data.online),
+        channel: data.channel || null,
+        participants: data.participants || {},
+        updatedAt: data.updatedAt || 0
+      };
+      renderDiscordPanel();
+      applyVoiceClasses();
+    }, err => {
+      discordDot.className = "statusDot offline";
+      discordStatus.textContent = `Erro Discord Bridge: ${err.message}`;
+    });
+  }
+
+  function renderDiscordPanel() {
+    discordBridgeCode.textContent = discordBridgeId;
+    const participants = Object.values(discordVoice.participants || {}).filter(p => !p.bot);
+
+    if (!firebaseConfig) {
+      discordDot.className = "statusDot waiting";
+      discordStatus.textContent = "Configura primeiro o Firebase.";
+    } else if (discordVoice.online) {
+      discordDot.className = "statusDot online";
+      discordStatus.textContent = "Discord Bridge ligado.";
+    } else {
+      discordDot.className = "statusDot waiting";
+      discordStatus.textContent = "Discord Bridge offline.";
+    }
+
+    discordChannelInfo.textContent = discordVoice.channel?.name
+      ? `CALL: ${discordVoice.channel.name} • ${participants.length} pessoa(s)`
+      : (discordVoice.online ? "Bridge ligado, mas ainda não estás numa call." : "Nenhuma call detetada.");
+
+    if (!participants.length) {
+      discordPeople.innerHTML = `<div class="bridgeOffline">${discordVoice.online ? "Entra numa call do Discord para aparecerem aqui as pessoas." : "Liga o Discord Bridge para aparecerem aqui as pessoas da call."}</div>`;
+      return;
+    }
+
+    discordPeople.innerHTML = participants.map(p => {
+      const status = (p.muted || p.deafened) ? "muted" : (p.speaking ? "speaking" : "idle");
+      const statusText = (p.muted || p.deafened)
+        ? (p.deafened ? "MUTADO / SEM SOM" : "MUTADO")
+        : (p.speaking ? "A FALAR" : "EM SILÊNCIO");
+
+      const mapped = state.characters.find(c => String(c.discordUserId || "") === String(p.userId || ""));
+      const options = [
+        `<option value="">— sem personagem —</option>`,
+        ...state.characters.map(c =>
+          `<option value="${c.id}" ${mapped?.id === c.id ? "selected" : ""}>${escapeHTML(c.name)} [${normalizeRole(c.role)}]</option>`
+        )
+      ].join("");
+
+      const av = String(p.avatarUrl || "");
+      const avatarHtml = av
+        ? `<img src="${escapeHTML(av)}" alt="${escapeHTML(p.displayName || p.username || "Discord")}">`
+        : escapeHTML(avatarInitial(p.displayName || p.username));
+
+      return `
+        <div class="discordPerson">
+          <div class="discordPersonTop">
+            <div class="discordAvatar">${avatarHtml}</div>
+            <div>
+              <div class="discordPersonName">${escapeHTML(p.displayName || p.username || p.userId)}</div>
+              <div class="discordState ${status}">${statusText}</div>
+            </div>
+            <div class="roleBadge ${status === "muted" ? "boss" : status === "speaking" ? "player" : "npc"}">${status === "muted" ? "MUTE" : status === "speaking" ? "VOICE" : "IDLE"}</div>
+          </div>
+          <div class="discordMap">
+            <label>Associar à personagem</label>
+            <select data-discord-map="${escapeHTML(String(p.userId || ""))}">${options}</select>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function applyVoiceClasses() {
+    document.querySelectorAll("[data-character-name-id]").forEach(el => {
+      const char = state.characters.find(c => c.id === el.dataset.characterNameId);
+      el.classList.remove("voice-speaking","voice-idle","voice-muted");
+      const cls = voiceClassForCharacter(char);
+      if (cls) el.classList.add(cls);
+    });
+
+    turnName.classList.remove("voice-speaking","voice-idle","voice-muted");
+    if (state.started && state.characters[state.currentIndex]) {
+      const cls = voiceClassForCharacter(state.characters[state.currentIndex]);
+      if (cls) turnName.classList.add(cls);
+    }
+  }
+
+  function mapDiscordUser(userId, characterId) {
+    checkpoint();
+    state.characters.forEach(c => {
+      if (String(c.discordUserId || "") === String(userId)) c.discordUserId = "";
+    });
+    if (characterId) {
+      const char = state.characters.find(c => c.id === characterId);
+      if (char) {
+        char.discordUserId = String(userId);
+        addHistory(`Discord associado: ${char.name}.`);
+      }
+    }
+    render();
   }
 
   function publicState() {
@@ -1208,7 +1504,15 @@
             : maxHp;
           const role = ["PLAYER","NPC","ENEMY","BOSS"].includes(c.role) ? c.role : "PLAYER";
           const avatar = safeAvatarData(c.avatar);
-          return {...c, maxHp, currentHp, role, avatar};
+          return {
+            ...c,
+            maxHp,
+            currentHp,
+            role,
+            avatar,
+            libraryId: String(c.libraryId || ""),
+            discordUserId: String(c.discordUserId || "")
+          };
         });
       }
     } catch {}
@@ -1322,6 +1626,165 @@
     return normalizeRole(role).toLowerCase();
   }
 
+  function libraryItemFromForm() {
+    const name = characterName.value.trim();
+    const maxHp = Math.floor(Number(characterMaxHp.value));
+    const currentHpInput = Math.floor(Number(characterCurrentHp.value));
+    const role = normalizeRole(characterRole.value);
+
+    if (!name) throw new Error("Escreve o nome do personagem.");
+    if (avatarProcessing) throw new Error("Espera a imagem acabar de processar.");
+    if (!safeAvatarData(pendingCharacterAvatar)) throw new Error("Escolhe uma imagem para o personagem.");
+    if (!Number.isFinite(maxHp) || maxHp < 1) throw new Error("O HP máximo tem de ser 1 ou mais.");
+    if (!Number.isFinite(currentHpInput) || currentHpInput < 0) throw new Error("O HP atual não pode ser negativo.");
+
+    return {
+      name,
+      currentHp: Math.min(currentHpInput, maxHp),
+      maxHp,
+      role,
+      avatar: pendingCharacterAvatar,
+      discordUserId: preparedLibraryDiscordUserId || ""
+    };
+  }
+
+  function clearCharacterForm() {
+    characterName.value = "";
+    characterCurrentHp.value = "20";
+    characterMaxHp.value = "20";
+    characterRole.value = "PLAYER";
+    preparedLibraryDiscordUserId = "";
+    editingLibraryId = null;
+    editingLibrary.classList.remove("show");
+    editingLibrary.textContent = "";
+    $("cancelLibraryEditBtn").style.display = "none";
+    $("saveLibraryBtn").textContent = "Guardar personagem";
+    resetAvatarPicker();
+  }
+
+  function prepareLibraryCharacter(id) {
+    const item = characterLibrary.find(x => x.id === id);
+    if (!item) return;
+    editingLibraryId = item.id;
+    preparedLibraryDiscordUserId = item.discordUserId || "";
+    characterName.value = item.name;
+    characterCurrentHp.value = item.currentHp;
+    characterMaxHp.value = item.maxHp;
+    characterRole.value = normalizeRole(item.role);
+    pendingCharacterAvatar = safeAvatarData(item.avatar);
+    characterImage.value = "";
+
+    if (pendingCharacterAvatar) {
+      avatarPreviewImg.src = pendingCharacterAvatar;
+      avatarPreview.classList.add("has-image");
+      characterImageName.textContent = "Imagem carregada da biblioteca (300 × 300)";
+    }
+
+    editingLibrary.classList.add("show");
+    editingLibrary.textContent = `A preparar "${item.name}". Altera o que quiseres antes de adicionar ao combate ou atualizar o guardado.`;
+    $("cancelLibraryEditBtn").style.display = "";
+    $("saveLibraryBtn").textContent = "Atualizar guardado";
+    document.querySelector(".characterCreate").scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  function saveFormToLibrary() {
+    try {
+      const data = libraryItemFromForm();
+      if (editingLibraryId) {
+        const i = characterLibrary.findIndex(x => x.id === editingLibraryId);
+        if (i >= 0) characterLibrary[i] = {...characterLibrary[i], ...data};
+        notice("Personagem guardado atualizado.");
+      } else {
+        characterLibrary.unshift({id: uid(), ...data});
+        notice("Personagem guardado na biblioteca.");
+      }
+      if (saveCharacterLibrary()) renderLibrary();
+    } catch (err) {
+      notice(err.message);
+    }
+  }
+
+  function saveActiveCharacterToLibrary(id) {
+    const char = state.characters.find(c => c.id === id);
+    if (!char) return;
+
+    const existing = char.libraryId ? characterLibrary.find(x => x.id === char.libraryId) : null;
+    if (existing) {
+      Object.assign(existing, {
+        name: char.name,
+        currentHp: char.currentHp,
+        maxHp: char.maxHp,
+        role: normalizeRole(char.role),
+        avatar: safeAvatarData(char.avatar),
+        discordUserId: String(char.discordUserId || "")
+      });
+      notice(`${char.name} atualizado na biblioteca.`);
+    } else {
+      const libraryId = uid();
+      characterLibrary.unshift({
+        id: libraryId,
+        name: char.name,
+        currentHp: char.currentHp,
+        maxHp: char.maxHp,
+        role: normalizeRole(char.role),
+        avatar: safeAvatarData(char.avatar),
+        discordUserId: String(char.discordUserId || "")
+      });
+      char.libraryId = libraryId;
+      notice(`${char.name} guardado na biblioteca.`);
+      save();
+      syncState();
+    }
+
+    saveCharacterLibrary();
+    renderLibrary();
+  }
+
+  function deleteLibraryCharacter(id) {
+    const item = characterLibrary.find(x => x.id === id);
+    if (!item) return;
+    if (!confirm(`Apagar "${item.name}" da biblioteca?`)) return;
+
+    characterLibrary = characterLibrary.filter(x => x.id !== id);
+    state.characters.forEach(c => {
+      if (c.libraryId === id) c.libraryId = "";
+    });
+    if (editingLibraryId === id) clearCharacterForm();
+    saveCharacterLibrary();
+    renderLibrary();
+    notice("Personagem removido da biblioteca.");
+  }
+
+  function renderLibrary() {
+    libraryCount.textContent = `${characterLibrary.length} guardado${characterLibrary.length === 1 ? "" : "s"}`;
+
+    if (!characterLibrary.length) {
+      libraryList.innerHTML = `<div class="empty">Ainda não guardaste nenhum personagem.</div>`;
+      return;
+    }
+
+    libraryList.innerHTML = characterLibrary.map(item => {
+      const avatar = safeAvatarData(item.avatar);
+      const avatarHtml = avatar
+        ? `<img src="${escapeHTML(avatar)}" alt="${escapeHTML(item.name)}">`
+        : escapeHTML(avatarInitial(item.name));
+
+      return `
+        <div class="libraryCard">
+          <div class="libraryAvatar">${avatarHtml}</div>
+          <div>
+            <div class="libraryName">${escapeHTML(item.name)}</div>
+            <div class="libraryMeta">${normalizeRole(item.role)} • HP ${item.currentHp}/${item.maxHp}${item.discordUserId ? " • Discord associado" : ""}</div>
+          </div>
+          <div class="libraryButtons">
+            <button class="success" data-library-prepare="${item.id}">Preparar</button>
+            <button class="secondary" data-library-edit="${item.id}">Editar</button>
+            <button class="danger" data-library-delete="${item.id}">Apagar</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
   function render() {
     roundEl.textContent = state.round;
 
@@ -1343,7 +1806,7 @@
           <div class="pos">${index + 1}</div>
           ${avatarHtml}
           <div class="hpWrap">
-            <div class="charName">${escapeHTML(char.name)} <span class="roleBadge ${roleClass(role)}">${role}</span></div>
+            <div class="charName" data-character-name-id="${char.id}">${escapeHTML(char.name)} <span class="roleBadge ${roleClass(role)}">${role}</span></div>
             <div class="hpText">HP ${char.currentHp} / ${char.maxHp}</div>
             <div class="hpBarOuter">
               <div class="hpBarInner ${hpClass}" style="width:${hpPercent}%"></div>
@@ -1352,6 +1815,7 @@
           <div class="miniBtns">
             <button class="secondary" data-action="up" data-id="${char.id}" title="Subir">↑</button>
             <button class="secondary" data-action="down" data-id="${char.id}" title="Descer">↓</button>
+            <button class="success" data-action="save" data-id="${char.id}" title="Guardar na biblioteca">S</button>
             <button class="danger" data-action="remove" data-id="${char.id}" title="Remover">X</button>
           </div>
         `;
@@ -1432,6 +1896,9 @@
     $("prevBtn").disabled = !state.started || !state.characters.length;
     $("resetTurnBtn").disabled = !state.started;
 
+    renderLibrary();
+    renderDiscordPanel();
+    applyVoiceClasses();
     save();
     updateUndoButtons();
     syncState();
@@ -1459,12 +1926,13 @@
       currentHp,
       maxHp,
       role,
-      avatar: pendingCharacterAvatar
+      avatar: pendingCharacterAvatar,
+      libraryId: editingLibraryId || "",
+      discordUserId: preparedLibraryDiscordUserId || ""
     });
 
     addHistory(`+ ${name} [${role}] entrou com ${currentHp}/${maxHp} HP.`);
-    characterName.value = "";
-    resetAvatarPicker();
+    clearCharacterForm();
     render();
     characterName.focus();
   }
@@ -1696,6 +2164,46 @@
     }
   });
 
+  $("saveLibraryBtn").addEventListener("click", saveFormToLibrary);
+  $("cancelLibraryEditBtn").addEventListener("click", () => {
+    clearCharacterForm();
+    notice("Edição cancelada.");
+  });
+
+  libraryList.addEventListener("click", e => {
+    const prep = e.target.closest("[data-library-prepare]");
+    const edit = e.target.closest("[data-library-edit]");
+    const del = e.target.closest("[data-library-delete]");
+    if (prep) prepareLibraryCharacter(prep.dataset.libraryPrepare);
+    if (edit) prepareLibraryCharacter(edit.dataset.libraryEdit);
+    if (del) deleteLibraryCharacter(del.dataset.libraryDelete);
+  });
+
+  discordPeople.addEventListener("change", e => {
+    const select = e.target.closest("select[data-discord-map]");
+    if (!select) return;
+    mapDiscordUser(select.dataset.discordMap, select.value);
+  });
+
+  $("copyBridgeBtn").addEventListener("click", async () => {
+    try {
+      await copyText(discordBridgeId);
+      notice("Bridge ID copiado!");
+    } catch {
+      notice("Não foi possível copiar.");
+    }
+  });
+
+  $("newBridgeBtn").addEventListener("click", () => {
+    if (!confirm("Criar um novo Bridge ID? Terás de atualizar o .env do Discord Bridge.")) return;
+    discordBridgeId = createSessionId() + createSessionId();
+    localStorage.setItem(DISCORD_BRIDGE_KEY, discordBridgeId);
+    discordVoice = {online:false, channel:null, participants:{}};
+    connectDiscordBridge();
+    renderDiscordPanel();
+    notice("Novo Bridge ID criado.");
+  });
+
   $("addCharacterBtn").addEventListener("click", addCharacter);
   characterName.addEventListener("keydown", e => {
     if (e.key === "Enter") addCharacter();
@@ -1789,6 +2297,7 @@
     const id = btn.dataset.id;
     if (btn.dataset.action === "up") moveCharacter(id, -1);
     if (btn.dataset.action === "down") moveCharacter(id, 1);
+    if (btn.dataset.action === "save") saveActiveCharacterToLibrary(id);
     if (btn.dataset.action === "remove") removeCharacter(id);
   });
 
@@ -1823,6 +2332,8 @@
   });
 
   load();
+  discordBridgeCode.textContent = discordBridgeId;
+  renderLibrary();
   render();
   updateUndoButtons();
   connectFirebase();
