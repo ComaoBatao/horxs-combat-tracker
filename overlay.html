@@ -30,6 +30,9 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
 .rosterRow.npc{border-left:7px solid #e3bd45}
 .rosterRow.enemy{border-left:7px solid #ff7a59}
 .rosterRow.boss{border-left:7px solid #ff4f9a}
+.voice-speaking{color:#fff !important;text-shadow:0 0 12px rgba(255,255,255,.7)}
+.voice-idle{color:#8d8794 !important}
+.voice-muted{color:#ff5f70 !important;text-shadow:0 0 10px rgba(255,70,90,.45)}
 .hpArea{margin-top:14px}
 .hpText{font-size:11px;line-height:1.6;margin-bottom:7px;text-align:center}
 .hpOuter{height:24px;border:4px solid #110b22;background:#160e27;padding:2px}
@@ -92,6 +95,9 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
   const session = params.get("session");
   const mode = ["full","minimal","roster"].includes(params.get("mode")) ? params.get("mode") : "full";
   const encodedCfg = params.get("cfg");
+  const bridgeId = params.get("bridge") || "";
+  let discordVoice = {online:false, participants:{}};
+  let lastData = null;
 
   const $ = id => document.getElementById(id);
   const waiting = $("waiting");
@@ -116,6 +122,19 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
     const percent = Math.max(0, Math.min(100, (current / max) * 100));
     const cls = current <= 0 ? "dead" : percent <= 25 ? "critical" : percent <= 50 ? "low" : "";
     return {max,current,percent,cls};
+  }
+
+  function voiceFor(char){
+    const id = String(char?.discordUserId || "");
+    return id ? (discordVoice?.participants?.[id] || null) : null;
+  }
+
+  function voiceClass(char){
+    const v = voiceFor(char);
+    if (!v) return "";
+    if (v.muted || v.deafened) return "voice-muted";
+    if (v.speaking) return "voice-speaking";
+    return "voice-idle";
   }
 
   function roleOf(char){
@@ -171,6 +190,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
   }
 
   function render(data){
+    lastData = data;
     if (!data || !Array.isArray(data.characters)) {
       waiting.classList.remove("hidden");
       waiting.textContent = "À espera de dados do combate...";
@@ -200,6 +220,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
       const hp = hpInfo(current);
       setPortrait("full", current);
       $("fullName").textContent = current.name;
+      $("fullName").className = `name ${voiceClass(current)}`;
       const currentRole = roleOf(current);
       $("fullRole").textContent = currentRole;
       $("fullRole").className = `roleBadge role-${roleCss(current)}`;
@@ -218,6 +239,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
     if (mode === "minimal") {
       setPortrait("minimal", current);
       $("minimalName").textContent = current ? current.name : "COMBATE NÃO INICIADO";
+      $("minimalName").className = `name ${current ? voiceClass(current) : ""}`;
       const r = current ? roleOf(current) : "";
       $("minimalRole").textContent = r;
       $("minimalRole").className = current ? `roleBadge role-${roleCss(current)}` : "roleBadge hidden";
@@ -232,7 +254,7 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
               <div class="rosterMain">
                 ${avatarHtml(char)}
                 <div>
-                  <div class="rosterTop"><span>${esc(char.name)} <span class="roleBadge role-${roleCss(char)}">${role}</span></span><span>${hp.current}/${hp.max}</span></div>
+                  <div class="rosterTop"><span class="${voiceClass(char)}">${esc(char.name)} <span class="roleBadge role-${roleCss(char)}">${role}</span></span><span>${hp.current}/${hp.max}</span></div>
                   <div class="hpOuter"><div class="hpInner ${hp.cls}" style="width:${hp.percent}%"></div></div>
                 </div>
               </div>
@@ -249,6 +271,15 @@ body{font-family:"Press Start 2P",monospace;color:#fff6d6}
       const app = firebase.initializeApp(cfg, `overlay-${Date.now()}`);
       await app.auth().signInAnonymously();
       const db = app.database();
+
+      if (bridgeId) {
+        db.ref(`discordBridges/${bridgeId}`).on("value", snap => {
+          const data = snap.val() || {};
+          discordVoice = {online:Boolean(data.online), participants:data.participants || {}};
+          if (lastData) render(lastData);
+        });
+      }
+
       db.ref(`horxsSessions/${session}`).on("value", snap => render(snap.val()), err => fail(`Erro Firebase: ${err.message}`));
     } catch (err) {
       fail(`Erro ao ligar: ${err.message}`);
