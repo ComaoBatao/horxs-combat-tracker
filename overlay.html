@@ -193,6 +193,21 @@ body.overlay-off #playersOverlay{
   justify-content:flex-end;
 }
 
+/* Vertical com exatamente 4 jogadores:
+   passa de 1x4 para 2x2 */
+.playersOverlay.vertical.four-players{
+  width:360px;
+}
+
+.playersOverlay.vertical.four-players .playersOverlayGrid{
+  display:grid;
+  grid-template-columns:repeat(2, 170px);
+  grid-template-rows:repeat(2, auto);
+  gap:20px;
+  align-items:end;
+  justify-content:end;
+}
+
 .voicePlayer{
   width:150px;
   text-align:center;
@@ -295,6 +310,11 @@ body.overlay-off #playersOverlay{
   .bottomColumns{grid-template-columns:1fr}
   .playersOverlay.horizontal{width:min(760px,96vw)}
   .playersOverlay.vertical{right:2%;width:128px}
+  .playersOverlay.vertical.four-players{width:268px}
+  .playersOverlay.vertical.four-players .playersOverlayGrid{
+    grid-template-columns:repeat(2, 128px);
+    gap:12px;
+  }
   .playersOverlayGrid{gap:12px}
   .voicePlayer{width:116px}
   .playersOverlay.vertical .voicePlayer{width:128px}
@@ -514,6 +534,10 @@ body.overlay-off #playersOverlay{
       .filter(Boolean);
 
     overlayBox.classList.remove("hidden");
+    overlayBox.classList.toggle(
+      "four-players",
+      playersLayout === "vertical" && visiblePlayers.length === 4
+    );
 
     grid.innerHTML = visiblePlayers.map(({person}) => {
       const status = playerVoiceStatus(person);
