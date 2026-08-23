@@ -861,6 +861,42 @@
     margin-top:14px;
   }
 
+  .playersLayoutControl{
+    margin-top:12px;
+    display:none;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    border:4px solid var(--borderDark);
+    background:#171024;
+    padding:10px 12px;
+  }
+
+  .playersLayoutControl.show{
+    display:flex;
+  }
+
+  .playersLayoutLabel{
+    color:#fff1a8;
+    font-size:9px;
+    line-height:1.6;
+  }
+
+  .playersLayoutButtons{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
+  .playersLayoutBtn{
+    min-width:120px;
+  }
+
+  .playersLayoutBtn.active{
+    background:#2aaf68;
+    color:#fff;
+  }
+
   .liveOverlayControl{
     margin-top:14px;
     display:flex;
@@ -949,6 +985,9 @@
     .obsControls{grid-template-columns:1fr}
     .liveOverlayControl{align-items:stretch}
     .liveOverlayControl button{width:100%}
+    .playersLayoutControl{align-items:stretch}
+    .playersLayoutButtons{display:grid;grid-template-columns:1fr 1fr;width:100%}
+    .playersLayoutBtn{min-width:0;width:100%}
   }
 
   @media (max-width: 980px){
@@ -1062,6 +1101,14 @@
       <button class="secondary" id="newSessionBtn">Nova sessão</button>
       <button class="success" id="copyOverlayBtn">Copiar link OBS</button>
       <button class="secondary" id="previewOverlayBtn">Abrir preview</button>
+    </div>
+
+    <div id="playersLayoutControl" class="playersLayoutControl">
+      <div class="playersLayoutLabel">LAYOUT DOS JOGADORES DISCORD</div>
+      <div class="playersLayoutButtons">
+        <button id="playersLayoutHorizontalBtn" class="playersLayoutBtn secondary" type="button">HORIZONTAL</button>
+        <button id="playersLayoutVerticalBtn" class="playersLayoutBtn secondary" type="button">VERTICAL</button>
+      </div>
     </div>
 
     <div class="liveOverlayControl">
@@ -1309,6 +1356,7 @@
   const LIBRARY_KEY = "horxs_character_library_v1";
   const DISCORD_BRIDGE_KEY = "horxs_discord_bridge_v1";
   const PANEL_VISIBILITY_KEY = "horxs_panel_visibility_v1";
+  const PLAYERS_OVERLAY_LAYOUT_KEY = "horxs_players_overlay_layout_v1";
 
   let firebaseConfig = loadFirebaseConfig();
   let sessionId = localStorage.getItem(SESSION_KEY) || createSessionId();
@@ -1379,6 +1427,9 @@
   const firebaseStatus = $("firebaseStatus");
   const sessionCode = $("sessionCode");
   const overlayMode = $("overlayMode");
+  const playersLayoutControl = $("playersLayoutControl");
+  const playersLayoutHorizontalBtn = $("playersLayoutHorizontalBtn");
+  const playersLayoutVerticalBtn = $("playersLayoutVerticalBtn");
   const toggleLiveOverlayBtn = $("toggleLiveOverlayBtn");
   const liveOverlayStatus = $("liveOverlayStatus");
   const firebaseConfigInput = $("firebaseConfigInput");
@@ -1507,6 +1558,30 @@
     return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
   }
 
+  function loadPlayersOverlayLayout() {
+    const saved = String(localStorage.getItem(PLAYERS_OVERLAY_LAYOUT_KEY) || "horizontal").toLowerCase();
+    return saved === "vertical" ? "vertical" : "horizontal";
+  }
+
+  let playersOverlayLayout = loadPlayersOverlayLayout();
+
+  function savePlayersOverlayLayout() {
+    localStorage.setItem(PLAYERS_OVERLAY_LAYOUT_KEY, playersOverlayLayout);
+  }
+
+  function updatePlayersLayoutUi() {
+    const isPlayers = overlayMode.value === "players";
+    playersLayoutControl.classList.toggle("show", isPlayers);
+    playersLayoutHorizontalBtn.classList.toggle("active", playersOverlayLayout === "horizontal");
+    playersLayoutVerticalBtn.classList.toggle("active", playersOverlayLayout === "vertical");
+  }
+
+  function setPlayersOverlayLayout(layout) {
+    playersOverlayLayout = layout === "vertical" ? "vertical" : "horizontal";
+    savePlayersOverlayLayout();
+    updatePlayersLayoutUi();
+  }
+
   function buildOverlayUrl(mode = overlayMode.value) {
     if (!firebaseConfig) throw new Error("Configura primeiro o Firebase.");
     const url = new URL("./overlay.html", window.location.href);
@@ -1514,6 +1589,9 @@
     url.hash = "";
     url.searchParams.set("session", sessionId);
     url.searchParams.set("mode", mode);
+    if (mode === "players") {
+      url.searchParams.set("layout", playersOverlayLayout);
+    }
     url.searchParams.set("cfg", encodeConfig(firebaseConfig));
     url.searchParams.set("bridge", discordBridgeId);
     return url.toString();
@@ -2733,6 +2811,9 @@
   });
 
   toggleLiveOverlayBtn.addEventListener("click", toggleLiveOverlay);
+  overlayMode.addEventListener("change", updatePlayersLayoutUi);
+  playersLayoutHorizontalBtn.addEventListener("click", () => setPlayersOverlayLayout("horizontal"));
+  playersLayoutVerticalBtn.addEventListener("click", () => setPlayersOverlayLayout("vertical"));
 
   $("copyOverlayBtn").addEventListener("click", async () => {
     try {
@@ -2818,6 +2899,7 @@
   updateBossConfigVisibility();
   updateEffectCurseUi();
   updateEffectTargetUi();
+  updatePlayersLayoutUi();
   applyPanelVisibility();
   discordBridgeCode.textContent = discordBridgeId;
   renderLibrary();
