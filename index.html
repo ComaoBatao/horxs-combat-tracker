@@ -798,7 +798,7 @@
 
   .panelToggles{
     display:grid;
-    grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-template-columns:repeat(4,minmax(0,1fr));
     gap:12px;
     margin-bottom:22px;
   }
@@ -1053,6 +1053,100 @@
       width:100%;
     }
   }
+
+  /* ================= OVERLAY CUSTOMIZER ================= */
+  .customizePanel{
+    margin-bottom:24px;
+    background:#201638;
+    padding:18px;
+  }
+
+  .customizeIntro{
+    margin:-4px 0 16px;
+    color:#c9b9e8;
+    font-size:9px;
+    line-height:1.8;
+  }
+
+  .themeSections{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px;
+  }
+
+  .themeSection{
+    border:4px solid var(--borderDark);
+    background:#171024;
+    padding:14px;
+    min-width:0;
+  }
+
+  .themeSection h3{
+    margin:0 0 12px;
+    color:#fff1a8;
+    font-size:10px;
+    line-height:1.6;
+  }
+
+  .themeGrid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+
+  .themeField{
+    min-width:0;
+  }
+
+  .themeField label{
+    font-size:9px;
+    margin-bottom:6px;
+  }
+
+  .themeField input[type="color"]{
+    width:100%;
+    height:48px;
+    min-height:48px;
+    padding:4px;
+    cursor:pointer;
+  }
+
+  .themeField input[type="range"]{
+    width:100%;
+    min-height:38px;
+    padding:0;
+    box-shadow:none;
+    accent-color:var(--accent);
+  }
+
+  .themeRangeValue{
+    color:#8af2ff;
+    font-size:9px;
+    line-height:1.5;
+    margin-top:4px;
+  }
+
+  .themeActions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+
+  @media (max-width: 980px){
+    .themeSections{grid-template-columns:1fr}
+  }
+
+  @media (max-width: 760px){
+    .panelToggles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+
+  @media (max-width: 540px){
+    .panelToggles{grid-template-columns:1fr}
+    .themeGrid{grid-template-columns:1fr}
+  }
+
 </style>
 </head>
 <body>
@@ -1074,7 +1168,70 @@
     <button class="panelToggle" id="toggleDiscordBtn" type="button">ESCONDER DISCORD / VOICE</button>
     <button class="panelToggle" id="toggleObsBtn" type="button">ESCONDER OBS / SESSÃO</button>
     <button class="panelToggle" id="toggleLibraryBtn" type="button">ESCONDER BIBLIOTECA</button>
+    <button class="panelToggle is-hidden" id="toggleCustomizeBtn" type="button">MOSTRAR PERSONALIZAÇÃO</button>
   </div>
+
+  <section class="customizePanel pixel-box panelHidden" id="customizePanel">
+    <h2>🎨 PERSONALIZAR OVERLAYS</h2>
+    <p class="customizeIntro">
+      As alterações são enviadas para o Firebase e aparecem no OBS em tempo real. Não precisas de gerar um link novo.
+    </p>
+
+    <div class="themeSections">
+      <div class="themeSection">
+        <h3>GERAL</h3>
+        <div class="themeGrid">
+          <div class="themeField"><label>Fundo dos painéis</label><input type="color" id="themePanelBg"></div>
+          <div class="themeField"><label>Contorno</label><input type="color" id="themeBorder"></div>
+          <div class="themeField"><label>Detalhes / moldura</label><input type="color" id="themeAccent"></div>
+          <div class="themeField"><label>Texto principal</label><input type="color" id="themeText"></div>
+          <div class="themeField"><label>Títulos / destaque</label><input type="color" id="themeTitle"></div>
+          <div class="themeField">
+            <label>Opacidade do painel</label>
+            <input type="range" id="themePanelOpacity" min="20" max="100" step="1">
+            <div class="themeRangeValue" id="themePanelOpacityValue">94%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="themeSection">
+        <h3>HP</h3>
+        <div class="themeGrid">
+          <div class="themeField"><label>HP saudável</label><input type="color" id="themeHpHigh"></div>
+          <div class="themeField"><label>HP médio</label><input type="color" id="themeHpMedium"></div>
+          <div class="themeField"><label>HP crítico</label><input type="color" id="themeHpCritical"></div>
+          <div class="themeField"><label>HP a zero</label><input type="color" id="themeHpDead"></div>
+        </div>
+      </div>
+
+      <div class="themeSection">
+        <h3>CARGOS</h3>
+        <div class="themeGrid">
+          <div class="themeField"><label>PLAYER</label><input type="color" id="themePlayer"></div>
+          <div class="themeField"><label>NPC</label><input type="color" id="themeNpc"></div>
+          <div class="themeField"><label>ENEMY</label><input type="color" id="themeEnemy"></div>
+          <div class="themeField"><label>BOSS</label><input type="color" id="themeBoss"></div>
+        </div>
+      </div>
+
+      <div class="themeSection">
+        <h3>DISCORD</h3>
+        <div class="themeGrid">
+          <div class="themeField"><label>A falar / moldura</label><input type="color" id="themeDiscordSpeaking"></div>
+          <div class="themeField"><label>Mutado / moldura</label><input type="color" id="themeDiscordMuted"></div>
+          <div class="themeField">
+            <label>Brilho em silêncio</label>
+            <input type="range" id="themeDiscordIdleBrightness" min="15" max="100" step="1">
+            <div class="themeRangeValue" id="themeDiscordIdleBrightnessValue">36%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="themeActions">
+      <button class="danger" id="resetOverlayThemeBtn" type="button">RESTAURAR PADRÃO</button>
+    </div>
+  </section>
 
   <section class="obsPanel pixel-box" id="obsPanel">
     <div class="obsTop">
@@ -1377,6 +1534,48 @@
   let firebaseReady = false;
   let lastSyncedJson = "";
 
+  const DEFAULT_OVERLAY_THEME = Object.freeze({
+    panelBg:"#201638",
+    panelOpacity:94,
+    border:"#110b22",
+    accent:"#5f4a96",
+    text:"#fff6d6",
+    title:"#fff59e",
+    hpHigh:"#36d36f",
+    hpMedium:"#f0b13b",
+    hpCritical:"#cc3f52",
+    hpDead:"#5f536f",
+    player:"#36c5f0",
+    npc:"#e3bd45",
+    enemy:"#ff7a59",
+    boss:"#ff4f9a",
+    discordSpeaking:"#ffffff",
+    discordMuted:"#ff435a",
+    discordIdleBrightness:36
+  });
+
+  function normalizeOverlayTheme(theme) {
+    const source = theme && typeof theme === "object" ? theme : {};
+    const result = {...DEFAULT_OVERLAY_THEME};
+
+    Object.keys(DEFAULT_OVERLAY_THEME).forEach(key => {
+      if (!(key in source)) return;
+
+      if (key === "panelOpacity" || key === "discordIdleBrightness") {
+        const n = Math.round(Number(source[key]));
+        if (Number.isFinite(n)) {
+          const min = key === "panelOpacity" ? 20 : 15;
+          result[key] = Math.max(min, Math.min(100, n));
+        }
+      } else {
+        const value = String(source[key] || "");
+        if (/^#[0-9a-f]{6}$/i.test(value)) result[key] = value.toLowerCase();
+      }
+    });
+
+    return result;
+  }
+
   let state = {
     characters: [],
     effects: [],
@@ -1384,6 +1583,7 @@
     round: 1,
     started: false,
     overlayVisible: true,
+    overlayTheme: {...DEFAULT_OVERLAY_THEME},
     history: []
   };
 
@@ -1442,6 +1642,26 @@
   const discordChannelInfo = $("discordChannelInfo");
   const discordPeople = $("discordPeople");
 
+  const themeInputs = {
+    panelBg:$("themePanelBg"),
+    panelOpacity:$("themePanelOpacity"),
+    border:$("themeBorder"),
+    accent:$("themeAccent"),
+    text:$("themeText"),
+    title:$("themeTitle"),
+    hpHigh:$("themeHpHigh"),
+    hpMedium:$("themeHpMedium"),
+    hpCritical:$("themeHpCritical"),
+    hpDead:$("themeHpDead"),
+    player:$("themePlayer"),
+    npc:$("themeNpc"),
+    enemy:$("themeEnemy"),
+    boss:$("themeBoss"),
+    discordSpeaking:$("themeDiscordSpeaking"),
+    discordMuted:$("themeDiscordMuted"),
+    discordIdleBrightness:$("themeDiscordIdleBrightness")
+  };
+
 
   function createSessionId() {
     const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -1480,7 +1700,7 @@
   }
 
   function loadPanelVisibility() {
-    const defaults = {discord:true, obs:true, library:true};
+    const defaults = {discord:true, obs:true, library:true, customize:false};
     try {
       const saved = JSON.parse(localStorage.getItem(PANEL_VISIBILITY_KEY) || "{}");
       return {...defaults, ...saved};
@@ -1499,7 +1719,8 @@
     const configs = [
       {key:"discord", panel:$("discordPanel"), button:$("toggleDiscordBtn"), hideText:"ESCONDER DISCORD / VOICE", showText:"MOSTRAR DISCORD / VOICE"},
       {key:"obs", panel:$("obsPanel"), button:$("toggleObsBtn"), hideText:"ESCONDER OBS / SESSÃO", showText:"MOSTRAR OBS / SESSÃO"},
-      {key:"library", panel:$("libraryPanel"), button:$("toggleLibraryBtn"), hideText:"ESCONDER BIBLIOTECA", showText:"MOSTRAR BIBLIOTECA"}
+      {key:"library", panel:$("libraryPanel"), button:$("toggleLibraryBtn"), hideText:"ESCONDER BIBLIOTECA", showText:"MOSTRAR BIBLIOTECA"},
+      {key:"customize", panel:$("customizePanel"), button:$("toggleCustomizeBtn"), hideText:"ESCONDER PERSONALIZAÇÃO", showText:"MOSTRAR PERSONALIZAÇÃO"}
     ];
 
     configs.forEach(({key,panel,button,hideText,showText}) => {
@@ -1773,6 +1994,45 @@
     render();
   }
 
+  function renderOverlayThemeControls() {
+    state.overlayTheme = normalizeOverlayTheme(state.overlayTheme);
+
+    Object.entries(themeInputs).forEach(([key, input]) => {
+      if (!input) return;
+      input.value = state.overlayTheme[key];
+    });
+
+    $("themePanelOpacityValue").textContent = `${state.overlayTheme.panelOpacity}%`;
+    $("themeDiscordIdleBrightnessValue").textContent = `${state.overlayTheme.discordIdleBrightness}%`;
+  }
+
+  function updateOverlayThemeValue(key, rawValue) {
+    const next = {...normalizeOverlayTheme(state.overlayTheme)};
+    next[key] = (key === "panelOpacity" || key === "discordIdleBrightness")
+      ? Number(rawValue)
+      : String(rawValue);
+
+    state.overlayTheme = normalizeOverlayTheme(next);
+
+    if (key === "panelOpacity") {
+      $("themePanelOpacityValue").textContent = `${state.overlayTheme.panelOpacity}%`;
+    }
+    if (key === "discordIdleBrightness") {
+      $("themeDiscordIdleBrightnessValue").textContent = `${state.overlayTheme.discordIdleBrightness}%`;
+    }
+
+    save();
+    syncState();
+  }
+
+  function resetOverlayTheme() {
+    state.overlayTheme = {...DEFAULT_OVERLAY_THEME};
+    renderOverlayThemeControls();
+    save();
+    syncState(true);
+    notice("Personalização dos overlays restaurada.");
+  }
+
   function renderLiveOverlayControl() {
     const visible = state.overlayVisible !== false;
 
@@ -1811,7 +2071,8 @@
       currentIndex: state.currentIndex,
       round: state.round,
       started: state.started,
-      overlayVisible: state.overlayVisible !== false
+      overlayVisible: state.overlayVisible !== false,
+      overlayTheme: normalizeOverlayTheme(state.overlayTheme)
     };
   }
 
@@ -1882,6 +2143,7 @@
       if (saved && Array.isArray(saved.characters)) {
         state = {...state, ...saved};
         state.overlayVisible = saved.overlayVisible !== false;
+        state.overlayTheme = normalizeOverlayTheme(saved.overlayTheme);
         state.effects = Array.isArray(state.effects)
           ? state.effects.map(e => ({...e, isCurse:Boolean(e.isCurse)}))
           : [];
@@ -2236,6 +2498,7 @@
   function render() {
     roundEl.textContent = state.round;
     renderLiveOverlayControl();
+    renderOverlayThemeControls();
 
     characterList.innerHTML = "";
     if (!state.characters.length) {
@@ -2708,6 +2971,7 @@
   $("toggleDiscordBtn").addEventListener("click", () => togglePanel("discord"));
   $("toggleObsBtn").addEventListener("click", () => togglePanel("obs"));
   $("toggleLibraryBtn").addEventListener("click", () => togglePanel("library"));
+  $("toggleCustomizeBtn").addEventListener("click", () => togglePanel("customize"));
 
   $("saveLibraryBtn").addEventListener("click", saveFormToLibrary);
   $("cancelLibraryEditBtn").addEventListener("click", () => {
@@ -2811,6 +3075,13 @@
   });
 
   toggleLiveOverlayBtn.addEventListener("click", toggleLiveOverlay);
+
+  Object.entries(themeInputs).forEach(([key, input]) => {
+    if (!input) return;
+    input.addEventListener("input", () => updateOverlayThemeValue(key, input.value));
+  });
+  $("resetOverlayThemeBtn").addEventListener("click", resetOverlayTheme);
+
   overlayMode.addEventListener("change", updatePlayersLayoutUi);
   playersLayoutHorizontalBtn.addEventListener("click", () => setPlayersOverlayLayout("horizontal"));
   playersLayoutVerticalBtn.addEventListener("click", () => setPlayersOverlayLayout("vertical"));
@@ -2849,6 +3120,7 @@
       round:1,
       started:false,
       overlayVisible: state.overlayVisible !== false,
+      overlayTheme: normalizeOverlayTheme(state.overlayTheme),
       history:[]
     };
     render();
@@ -2900,6 +3172,7 @@
   updateEffectCurseUi();
   updateEffectTargetUi();
   updatePlayersLayoutUi();
+  renderOverlayThemeControls();
   applyPanelVisibility();
   discordBridgeCode.textContent = discordBridgeId;
   renderLibrary();
