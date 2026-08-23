@@ -159,25 +159,47 @@ body.overlay-off #playersOverlay{
 }
 .playersOverlay{
   position:absolute;
-  left:50%;
-  bottom:4%;
-  transform:translateX(-50%);
-  width:min(1500px,96vw);
   background:transparent;
   pointer-events:none;
 }
 
+.playersOverlay.horizontal{
+  left:50%;
+  bottom:4%;
+  transform:translateX(-50%);
+  width:min(1500px,96vw);
+}
+
+.playersOverlay.vertical{
+  right:3%;
+  bottom:4%;
+  width:170px;
+}
+
 .playersOverlayGrid{
   display:flex;
+  gap:20px;
+}
+
+.playersOverlay.horizontal .playersOverlayGrid{
   align-items:flex-end;
   justify-content:center;
-  gap:20px;
   flex-wrap:wrap;
+}
+
+.playersOverlay.vertical .playersOverlayGrid{
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-end;
 }
 
 .voicePlayer{
   width:150px;
   text-align:center;
+}
+
+.playersOverlay.vertical .voicePlayer{
+  width:170px;
 }
 
 .voiceAvatarFrame{
@@ -271,8 +293,11 @@ body.overlay-off #playersOverlay{
   .roster{width:min(640px,90vw)}
   .topBattleRow,
   .bottomColumns{grid-template-columns:1fr}
+  .playersOverlay.horizontal{width:min(760px,96vw)}
+  .playersOverlay.vertical{right:2%;width:128px}
   .playersOverlayGrid{gap:12px}
   .voicePlayer{width:116px}
+  .playersOverlay.vertical .voicePlayer{width:128px}
   .voiceAvatarFrame{width:100px;height:100px}
   .voicePlayerName{font-size:8px}
 }
@@ -342,6 +367,7 @@ body.overlay-off #playersOverlay{
   const params = new URLSearchParams(location.search);
   const session = params.get("session");
   const mode = ["full","minimal","roster","players"].includes(params.get("mode")) ? params.get("mode") : "full";
+  const playersLayout = (params.get("layout") || "horizontal").toLowerCase() === "vertical" ? "vertical" : "horizontal";
   const encodedCfg = params.get("cfg");
   const bridgeId = params.get("bridge") || "";
   let discordVoice = {online:false, participants:{}};
@@ -468,6 +494,9 @@ body.overlay-off #playersOverlay{
       overlayBox.classList.add("hidden");
       return;
     }
+
+    overlayBox.classList.toggle("horizontal", playersLayout === "horizontal");
+    overlayBox.classList.toggle("vertical", playersLayout === "vertical");
 
     const associatedPlayers = Array.isArray(data?.characters)
       ? data.characters.filter(char =>
