@@ -193,6 +193,39 @@ body.overlay-off #playersOverlay{
   justify-content:flex-end;
 }
 
+/* Vertical com exatamente 3 jogadores:
+   fica em zig-zag:
+   1
+      3
+   2 */
+.playersOverlay.vertical.three-players{
+  width:360px;
+}
+
+.playersOverlay.vertical.three-players .playersOverlayGrid{
+  display:grid;
+  grid-template-columns:repeat(2, 170px);
+  grid-template-rows:repeat(3, auto);
+  gap:20px;
+  align-items:end;
+  justify-content:end;
+}
+
+.playersOverlay.vertical.three-players .voicePlayer:nth-child(1){
+  grid-column:1;
+  grid-row:1;
+}
+
+.playersOverlay.vertical.three-players .voicePlayer:nth-child(2){
+  grid-column:1;
+  grid-row:3;
+}
+
+.playersOverlay.vertical.three-players .voicePlayer:nth-child(3){
+  grid-column:2;
+  grid-row:2;
+}
+
 /* Vertical com exatamente 4 jogadores:
    passa de 1x4 para 2x2 */
 .playersOverlay.vertical.four-players{
@@ -310,6 +343,11 @@ body.overlay-off #playersOverlay{
   .bottomColumns{grid-template-columns:1fr}
   .playersOverlay.horizontal{width:min(760px,96vw)}
   .playersOverlay.vertical{right:2%;width:128px}
+  .playersOverlay.vertical.three-players{width:268px}
+  .playersOverlay.vertical.three-players .playersOverlayGrid{
+    grid-template-columns:repeat(2, 128px);
+    gap:12px;
+  }
   .playersOverlay.vertical.four-players{width:268px}
   .playersOverlay.vertical.four-players .playersOverlayGrid{
     grid-template-columns:repeat(2, 128px);
@@ -534,6 +572,10 @@ body.overlay-off #playersOverlay{
       .filter(Boolean);
 
     overlayBox.classList.remove("hidden");
+    overlayBox.classList.toggle(
+      "three-players",
+      playersLayout === "vertical" && visiblePlayers.length === 3
+    );
     overlayBox.classList.toggle(
       "four-players",
       playersLayout === "vertical" && visiblePlayers.length === 4
