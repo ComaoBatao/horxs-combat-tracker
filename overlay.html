@@ -6,6 +6,24 @@
 <title>HORXS OBS Overlay</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+:root{
+  --ov-panel:rgba(32,22,56,.94);
+  --ov-border:#110b22;
+  --ov-accent:#5f4a96;
+  --ov-text:#fff6d6;
+  --ov-title:#fff59e;
+  --ov-hp-high:#36d36f;
+  --ov-hp-medium:#f0b13b;
+  --ov-hp-critical:#cc3f52;
+  --ov-hp-dead:#5f536f;
+  --ov-player:#36c5f0;
+  --ov-npc:#e3bd45;
+  --ov-enemy:#ff7a59;
+  --ov-boss:#ff4f9a;
+  --ov-discord-speaking:#ffffff;
+  --ov-discord-muted:#ff435a;
+  --ov-discord-idle-brightness:.36;
+}
 *{box-sizing:border-box}
 html,body{width:100%;height:100%;margin:0;overflow:hidden;background:transparent!important}
 body{font-family:"Press Start 2P",monospace;color:#fff6d6}
@@ -335,6 +353,61 @@ body.overlay-off #playersOverlay{
   opacity:1;
 }
 
+/* ===== TEMA DINÂMICO ===== */
+body{color:var(--ov-text)}
+.pixel{
+  border-color:var(--ov-border);
+  background:var(--ov-panel);
+  box-shadow:0 0 0 4px var(--ov-accent),0 8px 0 var(--ov-border),8px 8px 0 rgba(0,0,0,.3);
+}
+.kicker,.rosterTitle{color:var(--ov-accent)}
+.name{color:var(--ov-title);text-shadow:4px 4px 0 var(--ov-border)}
+.hpOuter{border-color:var(--ov-border)}
+.hpInner{background:var(--ov-hp-high)}
+.hpInner.low{background:var(--ov-hp-medium)}
+.hpInner.critical{background:var(--ov-hp-critical)}
+.hpInner.dead{background:var(--ov-hp-dead)}
+
+.role-player{background:var(--ov-player);color:#fff}
+.role-npc{background:var(--ov-npc);color:#fff}
+.role-enemy{background:var(--ov-enemy);color:#fff}
+.role-boss{background:var(--ov-boss);color:#fff}
+
+.rosterRow.player{border-left-color:var(--ov-player)}
+.rosterRow.npc{border-left-color:var(--ov-npc)}
+.rosterRow.enemy{border-left-color:var(--ov-enemy)}
+.rosterRow.boss{border-left-color:var(--ov-boss)}
+.rosterRow.active{outline-color:var(--ov-accent)}
+.bossRow.active{outline-color:var(--ov-boss)}
+.enemyRow.active{outline-color:var(--ov-enemy)}
+.bossSectionTitle{color:var(--ov-boss)}
+.enemySectionTitle{color:var(--ov-enemy)}
+.columnTitle.player{color:var(--ov-player)}
+.columnTitle.npc{color:var(--ov-npc)}
+.bossHp{color:var(--ov-boss)}
+.enemyHp{color:var(--ov-enemy)}
+
+.voicePlayer.idle .voiceAvatarFrame{
+  filter:brightness(var(--ov-discord-idle-brightness)) saturate(.68);
+}
+.voicePlayer.speaking .voiceAvatarFrame{
+  border-color:var(--ov-discord-speaking);
+  box-shadow:
+    0 0 0 4px var(--ov-discord-speaking),
+    0 0 25px rgba(255,255,255,.30),
+    6px 6px 0 rgba(0,0,0,.32);
+}
+.voicePlayer.muted .voiceAvatarFrame{
+  border-color:var(--ov-discord-muted);
+  box-shadow:
+    0 0 0 4px var(--ov-discord-muted),
+    0 0 24px rgba(255,67,90,.42),
+    6px 6px 0 rgba(0,0,0,.32);
+}
+.voicePlayer.muted .voicePlayerName{color:var(--ov-discord-muted)}
+.voiceAvatarFrame{border-color:var(--ov-border)}
+.voicePlayerName{text-shadow:3px 3px 0 var(--ov-border)}
+
 .error{color:#ff9eaa}
 
 @media (max-width: 900px){
@@ -594,8 +667,52 @@ body.overlay-off #playersOverlay{
     }).join("");
   }
 
+  function hexToRgb(hex){
+    const clean = String(hex || "").replace("#","");
+    if (!/^[0-9a-f]{6}$/i.test(clean)) return null;
+    return {
+      r:parseInt(clean.slice(0,2),16),
+      g:parseInt(clean.slice(2,4),16),
+      b:parseInt(clean.slice(4,6),16)
+    };
+  }
+
+  function safeThemeColor(value, fallback){
+    const s = String(value || "");
+    return /^#[0-9a-f]{6}$/i.test(s) ? s : fallback;
+  }
+
+  function applyOverlayTheme(theme){
+    const t = theme && typeof theme === "object" ? theme : {};
+    const root = document.documentElement.style;
+
+    const panel = safeThemeColor(t.panelBg, "#201638");
+    const rgb = hexToRgb(panel) || {r:32,g:22,b:56};
+    const panelOpacity = Math.max(20, Math.min(100, Number(t.panelOpacity) || 94)) / 100;
+
+    root.setProperty("--ov-panel", `rgba(${rgb.r},${rgb.g},${rgb.b},${panelOpacity})`);
+    root.setProperty("--ov-border", safeThemeColor(t.border, "#110b22"));
+    root.setProperty("--ov-accent", safeThemeColor(t.accent, "#5f4a96"));
+    root.setProperty("--ov-text", safeThemeColor(t.text, "#fff6d6"));
+    root.setProperty("--ov-title", safeThemeColor(t.title, "#fff59e"));
+    root.setProperty("--ov-hp-high", safeThemeColor(t.hpHigh, "#36d36f"));
+    root.setProperty("--ov-hp-medium", safeThemeColor(t.hpMedium, "#f0b13b"));
+    root.setProperty("--ov-hp-critical", safeThemeColor(t.hpCritical, "#cc3f52"));
+    root.setProperty("--ov-hp-dead", safeThemeColor(t.hpDead, "#5f536f"));
+    root.setProperty("--ov-player", safeThemeColor(t.player, "#36c5f0"));
+    root.setProperty("--ov-npc", safeThemeColor(t.npc, "#e3bd45"));
+    root.setProperty("--ov-enemy", safeThemeColor(t.enemy, "#ff7a59"));
+    root.setProperty("--ov-boss", safeThemeColor(t.boss, "#ff4f9a"));
+    root.setProperty("--ov-discord-speaking", safeThemeColor(t.discordSpeaking, "#ffffff"));
+    root.setProperty("--ov-discord-muted", safeThemeColor(t.discordMuted, "#ff435a"));
+
+    const idleBrightness = Math.max(15, Math.min(100, Number(t.discordIdleBrightness) || 36)) / 100;
+    root.setProperty("--ov-discord-idle-brightness", String(idleBrightness));
+  }
+
   function render(data){
     lastData = data;
+    applyOverlayTheme(data?.overlayTheme);
     if (!data || !Array.isArray(data.characters)) {
       document.body.classList.remove("overlay-off");
 
