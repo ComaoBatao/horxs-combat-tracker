@@ -1193,6 +1193,7 @@
 
       <div class="toolbar" style="margin-top:18px">
         <button class="success" id="startBtn">Iniciar combate</button>
+        <button class="warning" id="finishCombatBtn">Finalizar combate</button>
         <button class="danger" id="clearBtn">Limpar tudo</button>
       </div>
 
@@ -2265,7 +2266,8 @@
       ? state.history.map(h => `<div class="historyLine">${escapeHTML(h)}</div>`).join("")
       : `<div class="historyLine">Ainda não aconteceu nada.</div>`;
 
-    $("startBtn").disabled = !state.characters.length;
+    $("startBtn").disabled = !state.characters.length || state.started;
+    $("finishCombatBtn").disabled = !state.started;
     $("nextBtn").disabled = !state.started || !state.characters.length;
     $("prevBtn").disabled = !state.started || !state.characters.length;
     $("resetTurnBtn").disabled = !state.started;
@@ -2363,6 +2365,38 @@
     addHistory(`Combate iniciado. Vez de ${state.characters[0].name}.`);
     render();
     notice(`É a vez de ${state.characters[0].name}!`);
+  }
+
+  function finishCombat() {
+    if (!state.started) return notice("Não existe nenhum combate ativo.");
+
+    const activeEffects = state.effects.length;
+    const curses = state.effects.filter(effect => effect.isCurse).length;
+
+    if (!confirm(
+      `Finalizar o combate?\n\n` +
+      `• Os personagens e o HP atual serão mantidos.\n` +
+      `• Todos os efeitos e maldições serão removidos.\n` +
+      `• A rodada volta para 1.`
+    )) return;
+
+    checkpoint();
+
+    state.started = false;
+    state.currentIndex = -1;
+    state.round = 1;
+    state.effects = [];
+
+    let detail = "Combate finalizado.";
+    if (activeEffects) {
+      detail += ` ${activeEffects} efeito(s) removido(s)`;
+      if (curses) detail += `, incluindo ${curses} maldição(ões)`;
+      detail += ".";
+    }
+
+    addHistory(detail);
+    render();
+    notice("Combate finalizado. Personagens e HP foram mantidos.");
   }
 
   function tickAllEffects() {
@@ -2644,6 +2678,7 @@
   });
 
   $("startBtn").addEventListener("click", startCombat);
+  $("finishCombatBtn").addEventListener("click", finishCombat);
   $("nextBtn").addEventListener("click", nextTurn);
   $("prevBtn").addEventListener("click", previousTurn);
   $("resetTurnBtn").addEventListener("click", resetOrder);
