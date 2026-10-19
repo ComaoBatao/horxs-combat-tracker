@@ -1,0 +1,3324 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HORXS — Combat Tracker + OBS</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  :root{
+    --bg:#1a1230;
+    --bg2:#241844;
+    --panel:#2f2253;
+    --panel2:#3b2a68;
+    --panel3:#4a3480;
+    --text:#fff6d6;
+    --muted:#c9b98d;
+    --accent:#ff4f9a;
+    --accent2:#00d9ff;
+    --green:#54f28c;
+    --yellow:#ffd24a;
+    --red:#ff6b6b;
+    --borderDark:#110b22;
+    --shadow:#000000;
+  }
+
+  *{box-sizing:border-box}
+
+  html{
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  body{
+    margin:0;
+    color:var(--text);
+    font-family:"Press Start 2P", monospace;
+    background:
+      linear-gradient(0deg, rgba(0,0,0,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,.08) 1px, transparent 1px),
+      linear-gradient(180deg, #140d27 0%, #241844 50%, #181126 100%);
+    background-size: 12px 12px, 12px 12px, 100% 100%;
+    min-height:100vh;
+  }
+
+  .app{
+    max-width:1250px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+  }
+
+  .pixel-box{
+    border:4px solid var(--borderDark);
+    box-shadow:
+      0 0 0 4px #5f4a96,
+      0 8px 0 0 var(--borderDark),
+      8px 8px 0 0 rgba(0,0,0,.25);
+    border-radius:0;
+  }
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    margin-bottom:24px;
+  }
+
+  .brand{
+    padding:16px;
+    background:var(--panel);
+  }
+
+  .brand h1{
+    margin:0;
+    font-size:clamp(18px,2vw,26px);
+    line-height:1.55;
+    color:#fff1a8;
+    text-shadow:3px 3px 0 var(--borderDark);
+  }
+
+  .brand p{
+    margin:12px 0 0;
+    color:var(--muted);
+    font-size:11px;
+    line-height:1.7;
+  }
+
+  .roundBadge{
+    background:var(--panel3);
+    padding:16px 18px;
+    font-size:12px;
+    color:#d8ffff;
+    min-width:230px;
+    text-align:center;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap:20px;
+  }
+
+  .card{
+    background:var(--panel);
+    padding:18px;
+  }
+
+  h2{
+    margin:0 0 16px;
+    font-size:14px;
+    line-height:1.6;
+    color:#fff1a8;
+    text-shadow:2px 2px 0 var(--borderDark);
+  }
+
+  label{
+    display:block;
+    margin:0 0 8px;
+    color:#ffe99a;
+    font-size:11px;
+    line-height:1.6;
+  }
+
+  input,select{
+    width:100%;
+    min-width:0;
+    min-height:52px;
+    padding:14px 14px;
+    border:4px solid var(--borderDark);
+    background:#151024;
+    color:#fffdf2;
+    border-radius:0;
+    outline:none;
+    font-family:Consolas, "Courier New", monospace;
+    font-size:15px;
+    font-weight:800;
+    letter-spacing:.2px;
+    box-shadow: inset 0 0 0 4px #392a5f;
+  }
+
+  select{
+    cursor:pointer;
+    padding-right:34px;
+  }
+
+  option{
+    background:#151024;
+    color:#fffdf2;
+    font-family:Consolas, "Courier New", monospace;
+    font-size:15px;
+  }
+
+  input::placeholder{
+    color:#b9a9d3;
+    opacity:1;
+  }
+
+  input:focus, select:focus{
+    box-shadow: inset 0 0 0 4px #4f3a82, 0 0 0 4px rgba(0,217,255,.18);
+  }
+
+  button{
+    border:4px solid var(--borderDark);
+    background:var(--accent);
+    color:white;
+    padding:13px 12px;
+    cursor:pointer;
+    border-radius:0;
+    font-family:"Press Start 2P", monospace;
+    font-size:10px;
+    line-height:1.4;
+    box-shadow: 0 5px 0 0 var(--borderDark);
+    transition: transform .05s ease, box-shadow .05s ease, filter .12s ease;
+  }
+
+  button:hover{
+    filter:brightness(1.06);
+  }
+
+  button:active{
+    transform:translateY(3px);
+    box-shadow: 0 2px 0 0 var(--borderDark);
+  }
+
+  button.secondary{background:#6c5aa6}
+  button.success{background:#2baa65}
+  button.warning{background:#b98519}
+  button.danger{background:#c54357}
+  button:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+    transform:none;
+    box-shadow: 0 5px 0 0 var(--borderDark);
+  }
+
+  .formRow{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:10px;
+  }
+
+  .characterCreate{
+    display:grid;
+    grid-template-columns:1fr 1fr 1.2fr;
+    grid-template-areas:
+      "name name name"
+      "current max role"
+      "image image image"
+      "bossconfig bossconfig bossconfig"
+      "add add add";
+    gap:12px;
+    align-items:end;
+  }
+
+  .characterCreate .field-name{grid-area:name}
+  .characterCreate .field-current{grid-area:current}
+  .characterCreate .field-max{grid-area:max}
+  .characterCreate .field-role{grid-area:role}
+  .characterCreate .field-image{grid-area:image}
+  .characterCreate .add-character{grid-area:add;width:100%}
+
+  .bossConfig{
+    grid-area:bossconfig;
+    display:none;
+    border:4px solid var(--borderDark);
+    background:#35182d;
+    padding:12px;
+  }
+
+  .bossConfig.show{display:block}
+
+  .bossConfigTitle{
+    color:#ff9fbd;
+    font-size:10px;
+    line-height:1.6;
+    margin-bottom:9px;
+  }
+
+  .bossConfig label{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    color:#ffe7ef;
+    font-size:9px;
+    line-height:1.7;
+    margin:0;
+    cursor:pointer;
+  }
+
+  .bossConfig input[type="checkbox"]{
+    width:22px;
+    height:22px;
+    min-width:22px;
+    padding:0;
+    margin:0;
+    box-shadow:none;
+    accent-color:#ff4f9a;
+  }
+
+  .bossConfigHelp{
+    display:block;
+    margin-top:5px;
+    color:#ffb5cb;
+    font-size:8px;
+    line-height:1.6;
+  }
+
+  .avatarPicker{
+    display:grid;
+    grid-template-columns:92px 1fr;
+    gap:12px;
+    align-items:center;
+    padding:10px;
+    background:#201632;
+    border:4px solid var(--borderDark);
+  }
+
+  .avatarPreview{
+    width:92px;
+    height:92px;
+    border:4px solid var(--borderDark);
+    background:#120c20;
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+    color:#8574a5;
+    font-size:9px;
+    line-height:1.5;
+    text-align:center;
+  }
+
+  .avatarPreview img{width:100%;height:100%;object-fit:cover;display:none;image-rendering:auto}
+  .avatarPreview.has-image{
+    background:transparent;
+  }
+  .avatarPreview.has-image img{display:block;object-fit:contain}
+  .avatarPreview.has-image .avatarPlaceholder{display:none}
+
+  .avatarPreview.fullBodyPreview{
+    height:132px;
+  }
+
+  .avatarPickerInfo{min-width:0}
+  .avatarPickerInfo p{margin:9px 0 0;color:#bdaed9;font-size:9px;line-height:1.7}
+
+  .fileButton{
+    display:inline-block;
+    border:4px solid var(--borderDark);
+    background:#6c5aa6;
+    color:white;
+    padding:11px 12px;
+    cursor:pointer;
+    font-size:10px;
+    line-height:1.4;
+    box-shadow:0 5px 0 0 var(--borderDark);
+  }
+  .fileButton:active{transform:translateY(3px);box-shadow:0 2px 0 0 var(--borderDark)}
+  .fileName{margin-top:10px;color:#fff1a8;font-size:9px;line-height:1.6;word-break:break-word}
+
+  .hpManager{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-areas:
+      "person person"
+      "amount amount"
+      "damage heal";
+    gap:12px;
+    align-items:end;
+  }
+
+  .hpManager .field-person{grid-area:person}
+  .hpManager .field-amount{grid-area:amount}
+  .hpManager .damage-action{grid-area:damage;width:100%}
+  .hpManager .heal-action{grid-area:heal;width:100%}
+
+  .hpPreview{
+    margin-top:12px;
+    background:#201632;
+    border:4px solid var(--borderDark);
+    padding:12px;
+    color:#e8dcff;
+    font-size:10px;
+    line-height:1.8;
+  }
+
+  .hpWrap{flex:1;min-width:120px}
+
+  .hpText{
+    font-size:9px;
+    line-height:1.6;
+    margin-top:4px;
+    color:#f2e9ff;
+  }
+
+  .hpBarOuter{
+    width:100%;
+    height:14px;
+    border:3px solid var(--borderDark);
+    background:#160e27;
+    margin-top:6px;
+  }
+
+  .hpBarInner{
+    height:100%;
+    background:linear-gradient(90deg,#36d36f,#8df29c);
+    transition:width .15s ease;
+  }
+
+  .hpBarInner.low{background:linear-gradient(90deg,#f0b13b,#ffd75a)}
+  .hpBarInner.critical{background:linear-gradient(90deg,#cc3f52,#ff6b6b)}
+  .hpBarInner.dead{background:#5f536f}
+
+  .effectForm{
+    display:grid;
+    grid-template-columns:.75fr 1.25fr;
+    grid-template-areas:
+      "effectname effectname"
+      "curse curse"
+      "turns targettype"
+      "target target"
+      "effectadd effectadd";
+    gap:12px;
+    align-items:end;
+  }
+
+  .effectForm .field-effect-name{grid-area:effectname}
+  .effectForm .field-curse{grid-area:curse}
+  .effectForm .field-turns{grid-area:turns}
+  .effectForm .field-target-type{grid-area:targettype}
+  .effectForm .field-effect-target{grid-area:target}
+  .effectForm .add-effect{grid-area:effectadd;width:100%}
+
+  .curseToggle{
+    border:4px solid var(--borderDark);
+    background:#34162d;
+    padding:11px;
+  }
+
+  .curseToggle label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:0;
+    color:#ffc1d5;
+    cursor:pointer;
+    font-size:9px;
+    line-height:1.7;
+  }
+
+  .curseToggle input[type="checkbox"]{
+    width:22px;
+    height:22px;
+    min-width:22px;
+    padding:0;
+    margin:0;
+    box-shadow:none;
+    accent-color:#ff4f9a;
+  }
+
+  .curseHint{
+    display:block;
+    margin-top:4px;
+    color:#d9a9c1;
+    font-size:8px;
+    line-height:1.6;
+  }
+
+  .turns.curse{
+    background:#4b173d;
+    color:#ffb6d2;
+    border-color:#6e214f;
+  }
+
+  .effect.is-curse{
+    border-color:#6e214f;
+    box-shadow:inset 0 0 0 2px rgba(255,79,154,.10);
+  }
+
+  .wide{grid-column:auto}
+
+  .list,.effects{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:16px;
+  }
+
+  .char{
+    background:var(--panel2);
+    border:4px solid var(--borderDark);
+    padding:10px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow: inset 0 0 0 3px rgba(255,255,255,.04);
+  }
+
+  .char.active{
+    background:#21426a;
+    box-shadow:
+      inset 0 0 0 3px rgba(255,255,255,.05),
+      0 0 0 4px rgba(0,217,255,.20);
+  }
+
+  .pos{
+    width:34px;
+    height:34px;
+    border:4px solid var(--borderDark);
+    background:#22163f;
+    display:grid;
+    place-items:center;
+    color:#fff6d6;
+    font-size:10px;
+    flex:0 0 auto;
+  }
+
+  .charAvatar{
+    width:58px;
+    height:58px;
+    flex:0 0 58px;
+    border:4px solid transparent;
+    background:transparent;
+    object-fit:contain;
+    image-rendering:auto;
+  }
+
+  .charAvatarFallback{
+    width:58px;
+    height:58px;
+    flex:0 0 58px;
+    border:4px solid var(--borderDark);
+    background:#241844;
+    display:grid;
+    place-items:center;
+    color:#8af2ff;
+    font-size:16px;
+  }
+
+  .charName{
+    flex:1;
+    min-width:0;
+    font-size:10px;
+    line-height:1.5;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .roleBadge{
+    display:inline-block;
+    margin-left:8px;
+    padding:4px 6px;
+    border:3px solid var(--borderDark);
+    font-size:8px;
+    line-height:1;
+    vertical-align:middle;
+    text-shadow:none;
+  }
+
+  .roleBadge.player{background:#174b73;color:#8fe9ff}
+  .roleBadge.npc{background:#514522;color:#ffe98a}
+  .roleBadge.enemy{background:#5b2626;color:#ffb0a0}
+  .roleBadge.boss{background:#6d1c39;color:#ff9fbd;box-shadow:0 0 0 2px rgba(255,79,154,.2)}
+
+  .char.role-player{border-left:8px solid #36c5f0}
+  .char.role-npc{border-left:8px solid #e3bd45}
+  .char.role-enemy{border-left:8px solid #ff7a59}
+  .char.role-boss{border-left:8px solid #ff4f9a}
+
+  .miniBtns{
+    display:flex;
+    gap:6px;
+  }
+
+  .miniBtns button{
+    padding:8px 8px;
+    min-width:36px;
+    font-size:10px;
+  }
+
+  .voice-speaking{color:#fff !important;text-shadow:0 0 8px rgba(255,255,255,.55)}
+  .voice-idle{color:#928aa1 !important}
+  .voice-muted{color:#ff5f70 !important;text-shadow:0 0 8px rgba(255,70,90,.35)}
+
+  .libraryHeader,.discordHeader{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;flex-wrap:wrap;margin-bottom:12px;
+  }
+  .libraryHint,.discordHint{
+    color:#bdaed9;font-size:9px;line-height:1.7;margin:0 0 12px;
+  }
+  .libraryActions{
+    display:flex;gap:10px;flex-wrap:wrap;width:100%;
+  }
+  .libraryActions button{flex:1;min-width:170px}
+  .libraryList{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:10px;margin-top:12px;
+  }
+  .libraryCard{
+    border:4px solid var(--borderDark);background:#201632;padding:10px;
+    display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:center;
+  }
+  .libraryAvatar{
+    width:58px;height:58px;border:3px solid var(--borderDark);
+    background:#120c20;overflow:hidden;display:grid;place-items:center;
+    color:#8af2ff;font-size:13px;
+  }
+  .libraryAvatar:has(img),
+  .libraryAvatar.has-image{
+    background:transparent;
+    border-color:transparent;
+  }
+  .libraryAvatar img{width:100%;height:100%;object-fit:contain;image-rendering:auto}
+  .libraryName{font-size:10px;line-height:1.6;color:#fff1a8;word-break:break-word}
+  .libraryMeta{font-size:8px;line-height:1.7;color:#bdaed9}
+  .libraryButtons{grid-column:1 / -1;display:flex;gap:7px;flex-wrap:wrap}
+  .libraryButtons button{flex:1;min-width:75px;padding:8px 7px;font-size:8px}
+  .editingLibrary{
+    margin-top:10px;padding:10px;border:4px solid var(--borderDark);
+    background:#38295b;color:#fff1a8;font-size:9px;line-height:1.7;display:none;
+  }
+  .editingLibrary.show{display:block}
+
+  .discordPanel{
+    margin:22px 0;padding:18px;background:var(--panel);
+  }
+  .discordStatusRow{
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    font-size:9px;line-height:1.6;color:#d9cdec;
+  }
+  .bridgeCode{
+    border:3px solid var(--borderDark);background:#130d22;
+    padding:7px 9px;color:#8af2ff;word-break:break-all;
+  }
+  .discordPeople{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:10px;margin-top:14px;
+  }
+  .discordPerson{
+    border:4px solid var(--borderDark);background:#201632;padding:10px;
+  }
+  .discordPersonTop{
+    display:grid;grid-template-columns:42px 1fr auto;gap:9px;align-items:center;
+  }
+  .discordAvatar{
+    width:42px;height:42px;border:3px solid var(--borderDark);
+    background:#120c20;overflow:hidden;display:grid;place-items:center;
+    color:#8af2ff;font-size:11px;
+  }
+  .discordAvatar img{width:100%;height:100%;object-fit:cover;image-rendering:auto}
+  .discordPersonName{font-size:9px;line-height:1.5;color:#fff}
+  .discordState{font-size:8px;line-height:1.5;margin-top:3px}
+  .discordState.speaking{color:#fff}
+  .discordState.idle{color:#928aa1}
+  .discordState.muted{color:#ff5f70}
+  .discordMap{margin-top:9px}
+  .discordMap select{font-size:9px;padding:10px}
+  .bridgeOffline{
+    padding:14px;border:4px dashed #5d4a8f;background:#211834;
+    color:#bdaed9;font-size:9px;line-height:1.8;text-align:center;
+  }
+
+  .turnBox{
+    background:
+      linear-gradient(180deg, #3d2b6a 0%, #2a1d4c 100%);
+    padding:22px 16px;
+    text-align:center;
+    margin-bottom:16px;
+  }
+
+  .turnLabel{
+    color:#8af2ff;
+    font-size:10px;
+    line-height:1.8;
+    margin-bottom:10px;
+  }
+
+  .turnAvatar{
+    width:112px;
+    height:112px;
+    margin:0 auto 12px;
+    border:4px solid var(--borderDark);
+    background:#120c20;
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+    color:#8af2ff;
+    font-size:24px;
+    box-shadow:0 0 0 4px rgba(95,74,150,.55);
+  }
+  .turnAvatar img{width:100%;height:100%;object-fit:cover;display:none;image-rendering:auto}
+  .turnAvatar.has-image{
+    background:transparent;
+    border-color:transparent;
+    box-shadow:none;
+  }
+  .turnAvatar.has-image img{display:block;object-fit:contain}
+  .turnAvatar.has-image span{display:none}
+
+  .turnName{
+    font-size:clamp(18px,3vw,30px);
+    line-height:1.6;
+    color:#fff59e;
+    text-shadow:4px 4px 0 var(--borderDark);
+    word-break:break-word;
+    margin-bottom:12px;
+  }
+
+  .turnSub{
+    color:#d0c1ec;
+    font-size:10px;
+    line-height:1.8;
+  }
+
+  .stack,.toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .effect{
+    display:grid;
+    grid-template-columns:1fr auto auto;
+    gap:10px;
+    align-items:center;
+    background:#231838;
+    border:4px solid var(--borderDark);
+    padding:10px;
+  }
+
+  .effect strong{
+    display:block;
+    font-size:10px;
+    line-height:1.6;
+    margin-bottom:6px;
+    color:#fff4bd;
+  }
+
+  .effect small{
+    color:#bdaed9;
+    font-size:9px;
+    line-height:1.6;
+  }
+
+  .turns{
+    background:#182945;
+    border:4px solid var(--borderDark);
+    color:#8ff7ff;
+    padding:8px 10px;
+    min-width:110px;
+    text-align:center;
+    font-size:10px;
+    line-height:1.5;
+  }
+
+  .empty{
+    background:#221836;
+    border:4px dashed #5d4a8f;
+    color:#bdaed9;
+    text-align:center;
+    padding:18px 12px;
+    line-height:1.8;
+    font-size:10px;
+  }
+
+  .history{
+    margin-top:18px;
+    padding-top:18px;
+    border-top:4px solid #4a3a72;
+  }
+
+  .historyHeader{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+
+  .historyHeader h2{
+    margin:0;
+  }
+
+  .historyHeader button{
+    padding:9px 10px;
+    font-size:9px;
+  }
+
+  .historyLine{
+    color:#d2c3ec;
+    font-size:10px;
+    line-height:1.9;
+    padding:4px 0;
+  }
+
+  .notice{
+    position:fixed;
+    top:16px;
+    left:50%;
+    transform:translate(-50%,-18px);
+    opacity:0;
+    pointer-events:none;
+    z-index:50;
+    background:#2a1f45;
+    color:#fff6d6;
+    border:4px solid var(--borderDark);
+    box-shadow:0 0 0 4px #5f4a96, 0 6px 0 var(--borderDark);
+    padding:14px 16px;
+    font-size:10px;
+    line-height:1.6;
+    transition:.18s ease;
+    text-align:center;
+    max-width:min(92vw, 550px);
+  }
+
+  .notice.show{
+    opacity:1;
+    transform:translate(-50%,0);
+  }
+
+  .kbd{
+    display:inline-block;
+    background:#1a102d;
+    border:3px solid var(--borderDark);
+    padding:5px 8px;
+    font-size:9px;
+    color:#a9ecff;
+    vertical-align:middle;
+  }
+
+  .footerHint{
+    color:#bfaedf;
+    font-size:10px;
+    line-height:1.8;
+    margin:16px 0 0;
+  }
+
+
+  .panelToggles{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
+    margin-bottom:22px;
+  }
+
+  .panelToggle{
+    background:#332651;
+    color:#fff1a8;
+    border-color:var(--borderDark);
+    min-height:52px;
+  }
+
+  .panelToggle.is-hidden{
+    background:#181126;
+    color:#8f87a2;
+  }
+
+  .panelHidden{
+    display:none !important;
+  }
+
+  .obsPanel{
+    margin-bottom:24px;
+    background:#201638;
+    padding:16px;
+  }
+
+  .obsTop{
+    display:flex;
+    justify-content:space-between;
+    gap:14px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .obsStatus{
+    font-size:9px;
+    line-height:1.7;
+    color:#c9b9e8;
+  }
+
+  .statusDot{
+    display:inline-block;
+    width:10px;
+    height:10px;
+    margin-right:8px;
+    border:2px solid var(--borderDark);
+    background:#777;
+    vertical-align:middle;
+  }
+
+  .statusDot.online{background:#54f28c}
+  .statusDot.offline{background:#ff6b6b}
+  .statusDot.waiting{background:#ffd24a}
+
+  .obsControls{
+    display:grid;
+    grid-template-columns:1fr auto auto auto;
+    gap:10px;
+    align-items:end;
+    margin-top:14px;
+  }
+
+  .playersLayoutControl{
+    margin-top:12px;
+    display:none;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    border:4px solid var(--borderDark);
+    background:#171024;
+    padding:10px 12px;
+  }
+
+  .playersLayoutControl.show{
+    display:flex;
+  }
+
+  .playersLayoutLabel{
+    color:#fff1a8;
+    font-size:9px;
+    line-height:1.6;
+  }
+
+  .playersLayoutButtons{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
+  .playersLayoutBtn{
+    min-width:120px;
+  }
+
+  .playersLayoutBtn.active{
+    background:#2aaf68;
+    color:#fff;
+  }
+
+  .liveOverlayControl{
+    margin-top:14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    border:4px solid var(--borderDark);
+    background:#171024;
+    padding:12px;
+  }
+
+  .liveOverlayTitle{
+    color:#fff1a8;
+    font-size:10px;
+    line-height:1.6;
+    margin-bottom:5px;
+  }
+
+  .liveOverlayStatus{
+    color:#91f0ad;
+    font-size:9px;
+    line-height:1.7;
+  }
+
+  .liveOverlayStatus.is-hidden{
+    color:#ff7e8c;
+  }
+
+  #toggleLiveOverlayBtn.overlay-visible{
+    background:#c54357;
+    color:#fff;
+  }
+
+  #toggleLiveOverlayBtn.overlay-hidden{
+    background:#2baa65;
+    color:#fff;
+  }
+
+  .sessionCode{
+    display:inline-block;
+    color:#8af2ff;
+    margin-left:8px;
+  }
+
+  .firebaseSetup{
+    margin-top:14px;
+    border-top:4px solid #4a3a72;
+    padding-top:14px;
+  }
+
+  .firebaseSetup summary{
+    cursor:pointer;
+    color:#fff1a8;
+    font-size:10px;
+    line-height:1.7;
+  }
+
+  .firebaseSetup textarea{
+    width:100%;
+    min-height:145px;
+    resize:vertical;
+    margin-top:12px;
+    padding:12px;
+    border:4px solid var(--borderDark);
+    background:#151024;
+    color:#dfffff;
+    font-family:monospace;
+    font-size:12px;
+    line-height:1.45;
+    outline:none;
+  }
+
+  .setupHint{
+    font-size:9px;
+    line-height:1.8;
+    color:#bdaed9;
+    margin:10px 0;
+  }
+
+  @media (max-width: 800px){
+    .obsControls{grid-template-columns:1fr 1fr}
+  }
+
+  @media (max-width: 540px){
+    .obsControls{grid-template-columns:1fr}
+    .liveOverlayControl{align-items:stretch}
+    .liveOverlayControl button{width:100%}
+    .playersLayoutControl{align-items:stretch}
+    .playersLayoutButtons{display:grid;grid-template-columns:1fr 1fr;width:100%}
+    .playersLayoutBtn{min-width:0;width:100%}
+  }
+
+  @media (max-width: 980px){
+    .grid{grid-template-columns:1fr}
+  }
+
+  @media (max-width: 760px){
+    .panelToggles{grid-template-columns:1fr}
+    .characterCreate{
+      grid-template-columns:1fr 1fr;
+      grid-template-areas:
+        "name name"
+        "current max"
+        "role role"
+        "add add";
+    }
+
+    .hpManager{
+      grid-template-columns:1fr 1fr;
+    }
+
+    .effectForm{
+      grid-template-columns:1fr 1.4fr;
+    }
+  }
+
+  @media (max-width: 540px){
+    .formRow{grid-template-columns:1fr}
+    .avatarPicker{grid-template-columns:1fr}
+    .avatarPreview{width:120px;height:120px;margin:auto}
+    .characterCreate{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "name"
+        "current"
+        "max"
+        "role"
+        "add";
+    }
+    .hpManager{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "person"
+        "amount"
+        "damage"
+        "heal";
+    }
+    .effectForm{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "effectname"
+        "turns"
+        "character"
+        "effectadd";
+    }
+    .stack button,.toolbar button{flex:1}
+    .miniBtns{flex-wrap:wrap}
+    .effect{
+      grid-template-columns:1fr;
+    }
+    .turns{
+      min-width:unset;
+      width:100%;
+    }
+  }
+
+  /* ================= OVERLAY CUSTOMIZER ================= */
+  .customizePanel{
+    margin-bottom:24px;
+    background:#201638;
+    padding:18px;
+  }
+
+  .customizeIntro{
+    margin:-4px 0 16px;
+    color:#c9b9e8;
+    font-size:9px;
+    line-height:1.8;
+  }
+
+  .themeSections{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px;
+  }
+
+  .themeSection{
+    border:4px solid var(--borderDark);
+    background:#171024;
+    padding:14px;
+    min-width:0;
+  }
+
+  .themeSection h3{
+    margin:0 0 12px;
+    color:#fff1a8;
+    font-size:10px;
+    line-height:1.6;
+  }
+
+  .themeGrid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+
+  .themeField{
+    min-width:0;
+  }
+
+  .themeField label{
+    font-size:9px;
+    margin-bottom:6px;
+  }
+
+  .themeField input[type="color"]{
+    width:100%;
+    height:48px;
+    min-height:48px;
+    padding:4px;
+    cursor:pointer;
+  }
+
+  .themeField input[type="range"]{
+    width:100%;
+    min-height:38px;
+    padding:0;
+    box-shadow:none;
+    accent-color:var(--accent);
+  }
+
+  .themeRangeValue{
+    color:#8af2ff;
+    font-size:9px;
+    line-height:1.5;
+    margin-top:4px;
+  }
+
+  .themeActions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+
+  @media (max-width: 980px){
+    .themeSections{grid-template-columns:1fr}
+  }
+
+  @media (max-width: 760px){
+    .panelToggles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+
+  @media (max-width: 540px){
+    .panelToggles{grid-template-columns:1fr}
+    .themeGrid{grid-template-columns:1fr}
+  }
+
+</style>
+</head>
+<body>
+<div class="notice" id="notice"></div>
+
+<div class="app">
+  <header>
+    <div class="brand pixel-box">
+      <h1>HORXS TRACKER<br>DE TURNOS</h1>
+      <p>Estilo retro / pixel art para gerir turnos, ordem de combate e efeitos temporários. Cada avanço de turno reduz todos os efeitos ativos.</p>
+    </div>
+
+    <div class="roundBadge pixel-box">
+      RODADA<br><span id="round" style="font-size:18px;display:inline-block;margin-top:8px;color:#fff59e">1</span>
+    </div>
+  </header>
+
+  <div class="panelToggles">
+    <button class="panelToggle" id="toggleDiscordBtn" type="button">ESCONDER DISCORD / VOICE</button>
+    <button class="panelToggle" id="toggleObsBtn" type="button">ESCONDER OBS / SESSÃO</button>
+    <button class="panelToggle" id="toggleLibraryBtn" type="button">ESCONDER BIBLIOTECA</button>
+    <button class="panelToggle is-hidden" id="toggleCustomizeBtn" type="button">MOSTRAR PERSONALIZAÇÃO</button>
+  </div>
+
+  <section class="customizePanel pixel-box panelHidden" id="customizePanel">
+    <h2>🎨 PERSONALIZAR OVERLAYS</h2>
+    <p class="customizeIntro">
+      As alterações são enviadas para o Firebase e aparecem no OBS em tempo real. Não precisas de gerar um link novo.
+    </p>
+
+    <div class="themeSections">
+      <div class="themeSection">
+        <h3>GERAL</h3>
+        <div class="themeGrid">
+          <div class="themeField"><label>Fundo dos painéis</label><input type="color" id="themePanelBg"></div>
+          <div class="themeField"><label>Contorno</label><input type="color" id="themeBorder"></div>
+          <div class="themeField"><label>Detalhes / moldura</label><input type="color" id="themeAccent"></div>
+          <div class="themeField"><label>Texto principal</label><input type="color" id="themeText"></div>
+          <div class="themeField"><label>Títulos / destaque</label><input type="color" id="themeTitle"></div>
+          <div class="themeField">
+            <label>Opacidade do painel</label>
+            <input type="range" id="themePanelOpacity" min="20" max="100" step="1">
+            <div class="themeRangeValue" id="themePanelOpacityValue">94%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="themeSection">
+        <h3>HP</h3>
+        <div class="themeGrid">
+          <div class="themeField"><label>HP saudável</label><input type="color" id="themeHpHigh"></div>
+          <div class="themeField"><label>HP médio</label><input type="color" id="themeHpMedium"></div>
+          <div class="themeField"><label>HP crítico</label><input type="color" id="themeHpCritical"></div>
+          <div class="themeField"><label>HP a zero</label><input type="color" id="themeHpDead"></div>
+        </div>
+      </div>
+
+      <div class="themeSection">
+        <h3>CARGOS</h3>
+        <div class="themeGrid">
+          <div class="themeField"><label>PLAYER</label><input type="color" id="themePlayer"></div>
+          <div class="themeField"><label>NPC</label><input type="color" id="themeNpc"></div>
+          <div class="themeField"><label>ENEMY</label><input type="color" id="themeEnemy"></div>
+          <div class="themeField"><label>BOSS</label><input type="color" id="themeBoss"></div>
+        </div>
+      </div>
+
+      <div class="themeSection">
+        <h3>DISCORD</h3>
+        <div class="themeGrid">
+          <div class="themeField"><label>A falar / moldura</label><input type="color" id="themeDiscordSpeaking"></div>
+          <div class="themeField"><label>Mutado / moldura</label><input type="color" id="themeDiscordMuted"></div>
+          <div class="themeField">
+            <label>Brilho em silêncio</label>
+            <input type="range" id="themeDiscordIdleBrightness" min="15" max="100" step="1">
+            <div class="themeRangeValue" id="themeDiscordIdleBrightnessValue">36%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="themeActions">
+      <button class="danger" id="resetOverlayThemeBtn" type="button">RESTAURAR PADRÃO</button>
+    </div>
+  </section>
+
+  <section class="obsPanel pixel-box" id="obsPanel">
+    <div class="obsTop">
+      <div>
+        <h2 style="margin-bottom:8px">OBS / SESSÃO ONLINE</h2>
+        <div class="obsStatus">
+          <span id="firebaseDot" class="statusDot waiting"></span>
+          <span id="firebaseStatus">Firebase ainda não configurado.</span>
+          <span class="sessionCode">SESSÃO: <span id="sessionCode">—</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="obsControls">
+      <div>
+        <label>Tipo de overlay</label>
+        <select id="overlayMode">
+          <option value="full">Completo — turno + HP + efeitos</option>
+          <option value="minimal">Minimalista — só personagem atual</option>
+          <option value="roster">HP dos personagens</option>
+          <option value="players">Jogadores Discord</option>
+          <option value="fullbody">Corpo inteiro — personagem atual</option>
+        </select>
+      </div>
+      <button class="secondary" id="newSessionBtn">Nova sessão</button>
+      <button class="success" id="copyOverlayBtn">Copiar link OBS</button>
+      <button class="secondary" id="previewOverlayBtn">Abrir preview</button>
+    </div>
+
+    <div id="playersLayoutControl" class="playersLayoutControl">
+      <div class="playersLayoutLabel">LAYOUT DOS JOGADORES DISCORD</div>
+      <div class="playersLayoutButtons">
+        <button id="playersLayoutHorizontalBtn" class="playersLayoutBtn secondary" type="button">HORIZONTAL</button>
+        <button id="playersLayoutVerticalBtn" class="playersLayoutBtn secondary" type="button">VERTICAL</button>
+      </div>
+    </div>
+
+    <div class="liveOverlayControl">
+      <div>
+        <div class="liveOverlayTitle">EMISSÃO DOS OVERLAYS</div>
+        <div id="liveOverlayStatus" class="liveOverlayStatus">VISÍVEL NA LIVE</div>
+      </div>
+      <button id="toggleLiveOverlayBtn" class="overlay-visible" type="button">ESCONDER OVERLAY DA LIVE</button>
+    </div>
+
+    <details class="firebaseSetup" id="firebaseSetup">
+      <summary>CONFIGURAR FIREBASE</summary>
+      <p class="setupHint">
+        Cola aqui o bloco <b>firebaseConfig</b> do teu projeto Firebase. Ativa também Realtime Database e Anonymous Authentication.
+      </p>
+      <textarea id="firebaseConfigInput" spellcheck="false" placeholder='const firebaseConfig = {\n  apiKey: "...",\n  authDomain: "...",\n  databaseURL: "https://....firebaseio.com",\n  projectId: "...",\n  appId: "..."\n};'></textarea>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="success" id="saveFirebaseBtn">Guardar Firebase</button>
+        <button class="danger" id="removeFirebaseBtn">Remover configuração</button>
+      </div>
+      <p class="setupHint">
+        O link do OBS inclui apenas a configuração pública do Firebase + o código aleatório da sessão. A base de dados deve usar autenticação anónima nas regras.
+      </p>
+    </details>
+  </section>
+
+  <section class="discordPanel pixel-box" id="discordPanel">
+    <div class="discordHeader">
+      <div>
+        <h2 style="margin-bottom:8px">DISCORD / VOICE BRIDGE</h2>
+        <div class="discordStatusRow">
+          <span id="discordDot" class="statusDot waiting"></span>
+          <span id="discordStatus">À espera do Discord Bridge.</span>
+          <span>BRIDGE: <span id="discordBridgeCode" class="bridgeCode">—</span></span>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="secondary" id="copyBridgeBtn">Copiar Bridge ID</button>
+        <button class="warning" id="newBridgeBtn">Novo Bridge ID</button>
+      </div>
+    </div>
+    <p class="discordHint">
+      O bot segue a call onde estás. Associa cada pessoa a uma personagem:
+      <b>branco = a falar</b>, <b>cinzento = em silêncio</b>, <b>vermelho = mutado/deaf</b>.
+    </p>
+    <div id="discordChannelInfo" class="hpPreview">Nenhuma call detetada.</div>
+    <div id="discordPeople" class="discordPeople">
+      <div class="bridgeOffline">Liga o Discord Bridge para aparecerem aqui as pessoas da call.</div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card pixel-box">
+      <h2>PERSONAGENS</h2>
+
+      <div class="characterCreate">
+        <div class="field-name">
+          <label>Nome</label>
+          <input id="characterName" placeholder="Nome do personagem..." autocomplete="off">
+        </div>
+        <div class="field-current">
+          <label>HP atual</label>
+          <input id="characterCurrentHp" type="number" min="0" value="20">
+        </div>
+        <div class="field-max">
+          <label>HP máximo</label>
+          <input id="characterMaxHp" type="number" min="1" value="20">
+        </div>
+        <div class="field-role">
+          <label>Cargo</label>
+          <select id="characterRole">
+            <option value="PLAYER">PLAYER</option>
+            <option value="NPC">NPC</option>
+            <option value="ENEMY">ENEMY</option>
+            <option value="BOSS">BOSS</option>
+          </select>
+        </div>
+
+        <div class="field-image">
+          <label>Imagem do personagem (obrigatória)</label>
+          <div class="avatarPicker">
+            <div id="avatarPreview" class="avatarPreview">
+              <img id="avatarPreviewImg" alt="Preview do personagem">
+              <span class="avatarPlaceholder">SEM<br>IMAGEM</span>
+            </div>
+            <div class="avatarPickerInfo">
+              <input id="characterImage" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+              <label class="fileButton" for="characterImage">Escolher imagem</label>
+              <div id="characterImageName" class="fileName">Nenhuma imagem escolhida.</div>
+              <p>PNG, JPG ou WEBP. O site corta ao centro e converte automaticamente para 300 × 300. Máximo: 8 MB.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-image">
+          <label>Imagem de corpo inteiro (opcional)</label>
+          <div class="avatarPicker">
+            <div id="fullBodyPreview" class="avatarPreview fullBodyPreview">
+              <img id="fullBodyPreviewImg" alt="Preview do corpo inteiro">
+              <span class="avatarPlaceholder">SEM<br>CORPO<br>INTEIRO</span>
+            </div>
+            <div class="avatarPickerInfo">
+              <input id="characterFullBodyImage" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+              <label class="fileButton" for="characterFullBodyImage">Escolher corpo inteiro</label>
+              <div id="characterFullBodyImageName" class="fileName">Nenhuma imagem escolhida.</div>
+              <p>PNG, JPG ou WEBP. A imagem mantém o enquadramento completo, otimizada até 700 × 1200. PNG preserva transparência.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bossConfig" id="bossConfig">
+          <div class="bossConfigTitle">CONFIGURAÇÃO DE BOSS</div>
+          <label>
+            <input id="bossHideMaxHp" type="checkbox">
+            <span>
+              Desativar visibilidade do HP máximo deste boss no overlay.
+              <span class="bossConfigHelp">
+                Ligado: HP atual / ??? &nbsp; • &nbsp; Desligado: HP atual / HP máximo
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div class="libraryActions" style="grid-area:add">
+          <button class="add-character" id="addCharacterBtn">Adicionar personagem</button>
+          <button class="secondary" id="saveLibraryBtn">Guardar personagem</button>
+          <button class="danger" id="cancelLibraryEditBtn" style="display:none">Cancelar edição</button>
+        </div>
+      </div>
+
+      <div id="editingLibrary" class="editingLibrary"></div>
+
+      <div style="margin-top:22px" id="libraryPanel">
+        <div class="libraryHeader">
+          <h2 style="margin:0">BIBLIOTECA DE PERSONAGENS</h2>
+          <span id="libraryCount" class="sessionCode">0 guardados</span>
+        </div>
+        <p class="libraryHint">Guarda personagens para reutilizar. “Preparar” devolve os dados ao formulário para poderes alterar HP, cargo, nome, retrato ou imagem de corpo inteiro antes de adicionar.</p>
+        <div id="libraryList" class="libraryList"></div>
+      </div>
+
+      <div style="margin-top:22px">
+        <h2>PERSONAGENS NO COMBATE</h2>
+        <div id="characterList" class="list"></div>
+      </div>
+
+      <div class="toolbar" style="margin-top:18px">
+        <button class="success" id="startBtn">Iniciar combate</button>
+        <button class="warning" id="finishCombatBtn">Finalizar combate</button>
+        <button class="danger" id="clearBtn">Limpar tudo</button>
+      </div>
+
+      <div style="margin-top:24px">
+        <h2>GESTÃO DE HP</h2>
+        <div class="hpManager">
+          <div class="field-person">
+            <label>Personagem</label>
+            <select id="hpCharacter"></select>
+          </div>
+          <div class="field-amount">
+            <label>Quantidade</label>
+            <input id="hpAmount" type="number" min="1" value="5">
+          </div>
+          <button class="danger damage-action" id="damageBtn">Dar dano</button>
+          <button class="success heal-action" id="healBtn">Recuperar HP</button>
+        </div>
+        <div id="hpPreview" class="hpPreview">Seleciona um personagem.</div>
+      </div>
+
+      <div style="margin-top:24px">
+        <h2>ADICIONAR EFEITO</h2>
+        <div class="effectForm">
+          <div class="wide field-effect-name">
+            <label>Nome do efeito</label>
+            <input id="effectName" placeholder="Ex.: Envenenado">
+          </div>
+
+          <div class="field-curse curseToggle">
+            <label>
+              <input id="effectCurse" type="checkbox">
+              <span>
+                Tornar efeito uma MALDIÇÃO
+                <span class="curseHint">A maldição tem duração infinita e não perde turnos durante o combate.</span>
+              </span>
+            </label>
+          </div>
+
+          <div class="field-turns">
+            <label>Turnos</label>
+            <input id="effectTurns" type="number" min="1" value="3">
+          </div>
+
+          <div class="field-target-type">
+            <label>Tipo de alvo</label>
+            <select id="effectTargetType">
+              <option value="character">Personagem específica</option>
+              <option value="players">Todos os PLAYER</option>
+              <option value="npcs">Todos os NPC</option>
+              <option value="players_npcs">Todos os PLAYER + NPC</option>
+              <option value="bosses">Todos os BOSS</option>
+            </select>
+          </div>
+
+          <div class="field-effect-target" id="effectCharacterWrap">
+            <label>Personagem</label>
+            <select id="effectCharacter"></select>
+          </div>
+
+          <button class="add-effect" id="addEffectBtn">+ Adicionar efeito</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card pixel-box">
+      <div class="turnBox pixel-box">
+        <div class="turnLabel">E A VEZ DE</div>
+        <div id="turnAvatar" class="turnAvatar">
+          <img id="turnAvatarImg" alt="Retrato do personagem atual">
+          <span id="turnAvatarFallback">?</span>
+        </div>
+        <div id="turnName" class="turnName">—</div>
+        <div id="turnSub" class="turnSub">Adiciona personagens e inicia o combate.</div>
+      </div>
+
+      <div class="stack">
+        <button class="secondary" id="prevBtn">Anterior</button>
+        <button id="nextBtn">Próximo turno</button>
+        <button class="warning" id="resetTurnBtn">Reiniciar ordem</button>
+        <button class="secondary" id="undoBtn">↶ Desfazer</button>
+        <button class="secondary" id="redoBtn">↷ Refazer</button>
+      </div>
+
+      <div style="margin-top:22px">
+        <h2>EFEITOS ATIVOS</h2>
+        <div id="effectsList" class="effects"></div>
+      </div>
+
+      <div class="history">
+        <div class="historyHeader">
+          <h2>HISTÓRICO</h2>
+          <button class="danger" id="resetHistoryBtn">Resetar histórico</button>
+        </div>
+        <div id="historyList"></div>
+      </div>
+
+      <p class="footerHint">
+        Atalhos: <span class="kbd">Espaço</span> próximo turno • <span class="kbd">Ctrl+Z</span> desfazer • <span class="kbd">Ctrl+Y</span> refazer
+      </p>
+    </section>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script>
+(() => {
+  const STORAGE_KEY = "horxs_turn_tracker_pixel_v2";
+  const FIREBASE_CONFIG_KEY = "horxs_firebase_config_v1";
+  const SESSION_KEY = "horxs_obs_session_v1";
+  const LIBRARY_KEY = "horxs_character_library_v1";
+  const DISCORD_BRIDGE_KEY = "horxs_discord_bridge_v1";
+  const PANEL_VISIBILITY_KEY = "horxs_panel_visibility_v1";
+  const PLAYERS_OVERLAY_LAYOUT_KEY = "horxs_players_overlay_layout_v1";
+
+  let firebaseConfig = loadFirebaseConfig();
+  let sessionId = localStorage.getItem(SESSION_KEY) || createSessionId();
+  localStorage.setItem(SESSION_KEY, sessionId);
+
+  let discordBridgeId = localStorage.getItem(DISCORD_BRIDGE_KEY) || (createSessionId() + createSessionId());
+  localStorage.setItem(DISCORD_BRIDGE_KEY, discordBridgeId);
+  let discordBridgeRef = null;
+  let discordVoice = {online:false, channel:null, participants:{}};
+
+  let characterLibrary = loadCharacterLibrary();
+  let editingLibraryId = null;
+  let preparedLibraryDiscordUserId = "";
+
+  let firebaseApp = null;
+  let firebaseDb = null;
+  let firebaseSessionRef = null;
+  let firebaseReady = false;
+  let lastSyncedJson = "";
+
+  const DEFAULT_OVERLAY_THEME = Object.freeze({
+    panelBg:"#201638",
+    panelOpacity:94,
+    border:"#110b22",
+    accent:"#5f4a96",
+    text:"#fff6d6",
+    title:"#fff59e",
+    hpHigh:"#36d36f",
+    hpMedium:"#f0b13b",
+    hpCritical:"#cc3f52",
+    hpDead:"#5f536f",
+    player:"#36c5f0",
+    npc:"#e3bd45",
+    enemy:"#ff7a59",
+    boss:"#ff4f9a",
+    discordSpeaking:"#ffffff",
+    discordMuted:"#ff435a",
+    discordIdleBrightness:36
+  });
+
+  function normalizeOverlayTheme(theme) {
+    const source = theme && typeof theme === "object" ? theme : {};
+    const result = {...DEFAULT_OVERLAY_THEME};
+
+    Object.keys(DEFAULT_OVERLAY_THEME).forEach(key => {
+      if (!(key in source)) return;
+
+      if (key === "panelOpacity" || key === "discordIdleBrightness") {
+        const n = Math.round(Number(source[key]));
+        if (Number.isFinite(n)) {
+          const min = key === "panelOpacity" ? 20 : 15;
+          result[key] = Math.max(min, Math.min(100, n));
+        }
+      } else {
+        const value = String(source[key] || "");
+        if (/^#[0-9a-f]{6}$/i.test(value)) result[key] = value.toLowerCase();
+      }
+    });
+
+    return result;
+  }
+
+  let state = {
+    characters: [],
+    effects: [],
+    currentIndex: -1,
+    round: 1,
+    started: false,
+    overlayVisible: true,
+    overlayTheme: {...DEFAULT_OVERLAY_THEME},
+    history: []
+  };
+
+  const undoStack = [];
+  const redoStack = [];
+  const MAX_UNDO = 100;
+  let pendingCharacterAvatar = "";
+  let pendingCharacterFullBody = "";
+  let avatarProcessing = false;
+  let fullBodyProcessing = false;
+
+  const $ = id => document.getElementById(id);
+
+  const characterName = $("characterName");
+  const characterCurrentHp = $("characterCurrentHp");
+  const characterMaxHp = $("characterMaxHp");
+  const characterRole = $("characterRole");
+  const bossConfig = $("bossConfig");
+  const bossHideMaxHp = $("bossHideMaxHp");
+  const characterImage = $("characterImage");
+  const avatarPreview = $("avatarPreview");
+  const avatarPreviewImg = $("avatarPreviewImg");
+  const characterImageName = $("characterImageName");
+  const characterFullBodyImage = $("characterFullBodyImage");
+  const fullBodyPreview = $("fullBodyPreview");
+  const fullBodyPreviewImg = $("fullBodyPreviewImg");
+  const characterFullBodyImageName = $("characterFullBodyImageName");
+  const characterList = $("characterList");
+  const hpCharacter = $("hpCharacter");
+  const hpAmount = $("hpAmount");
+  const hpPreview = $("hpPreview");
+  const effectName = $("effectName");
+  const effectTurns = $("effectTurns");
+  const effectCurse = $("effectCurse");
+  const effectTargetType = $("effectTargetType");
+  const effectCharacterWrap = $("effectCharacterWrap");
+  const effectCharacter = $("effectCharacter");
+  const effectsList = $("effectsList");
+  const turnName = $("turnName");
+  const turnSub = $("turnSub");
+  const turnAvatar = $("turnAvatar");
+  const turnAvatarImg = $("turnAvatarImg");
+  const turnAvatarFallback = $("turnAvatarFallback");
+  const roundEl = $("round");
+  const historyList = $("historyList");
+  const firebaseDot = $("firebaseDot");
+  const firebaseStatus = $("firebaseStatus");
+  const sessionCode = $("sessionCode");
+  const overlayMode = $("overlayMode");
+  const playersLayoutControl = $("playersLayoutControl");
+  const playersLayoutHorizontalBtn = $("playersLayoutHorizontalBtn");
+  const playersLayoutVerticalBtn = $("playersLayoutVerticalBtn");
+  const toggleLiveOverlayBtn = $("toggleLiveOverlayBtn");
+  const liveOverlayStatus = $("liveOverlayStatus");
+  const firebaseConfigInput = $("firebaseConfigInput");
+  const libraryList = $("libraryList");
+  const libraryCount = $("libraryCount");
+  const editingLibrary = $("editingLibrary");
+  const discordDot = $("discordDot");
+  const discordStatus = $("discordStatus");
+  const discordBridgeCode = $("discordBridgeCode");
+  const discordChannelInfo = $("discordChannelInfo");
+  const discordPeople = $("discordPeople");
+
+  const themeInputs = {
+    panelBg:$("themePanelBg"),
+    panelOpacity:$("themePanelOpacity"),
+    border:$("themeBorder"),
+    accent:$("themeAccent"),
+    text:$("themeText"),
+    title:$("themeTitle"),
+    hpHigh:$("themeHpHigh"),
+    hpMedium:$("themeHpMedium"),
+    hpCritical:$("themeHpCritical"),
+    hpDead:$("themeHpDead"),
+    player:$("themePlayer"),
+    npc:$("themeNpc"),
+    enemy:$("themeEnemy"),
+    boss:$("themeBoss"),
+    discordSpeaking:$("themeDiscordSpeaking"),
+    discordMuted:$("themeDiscordMuted"),
+    discordIdleBrightness:$("themeDiscordIdleBrightness")
+  };
+
+
+  function createSessionId() {
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => alphabet[b % alphabet.length]).join("");
+  }
+
+  function loadCharacterLibrary() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LIBRARY_KEY) || "[]");
+      if (!Array.isArray(raw)) return [];
+      return raw.map(item => ({
+        id: String(item.id || uid()),
+        name: String(item.name || "Personagem"),
+        currentHp: Math.max(0, Number(item.currentHp) || 0),
+        maxHp: Math.max(1, Number(item.maxHp) || 20),
+        role: ["PLAYER","NPC","ENEMY","BOSS"].includes(item.role) ? item.role : "PLAYER",
+        avatar: safeAvatarData(item.avatar),
+        fullBodyImage: safeAvatarData(item.fullBodyImage),
+        discordUserId: String(item.discordUserId || ""),
+        hideMaxHpOverlay: Boolean(item.hideMaxHpOverlay)
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  function saveCharacterLibrary() {
+    try {
+      localStorage.setItem(LIBRARY_KEY, JSON.stringify(characterLibrary));
+      return true;
+    } catch {
+      notice("A biblioteca ficou demasiado grande para este navegador.");
+      return false;
+    }
+  }
+
+  function loadPanelVisibility() {
+    const defaults = {discord:true, obs:true, library:true, customize:false};
+    try {
+      const saved = JSON.parse(localStorage.getItem(PANEL_VISIBILITY_KEY) || "{}");
+      return {...defaults, ...saved};
+    } catch {
+      return defaults;
+    }
+  }
+
+  const panelVisibility = loadPanelVisibility();
+
+  function savePanelVisibility() {
+    localStorage.setItem(PANEL_VISIBILITY_KEY, JSON.stringify(panelVisibility));
+  }
+
+  function applyPanelVisibility() {
+    const configs = [
+      {key:"discord", panel:$("discordPanel"), button:$("toggleDiscordBtn"), hideText:"ESCONDER DISCORD / VOICE", showText:"MOSTRAR DISCORD / VOICE"},
+      {key:"obs", panel:$("obsPanel"), button:$("toggleObsBtn"), hideText:"ESCONDER OBS / SESSÃO", showText:"MOSTRAR OBS / SESSÃO"},
+      {key:"library", panel:$("libraryPanel"), button:$("toggleLibraryBtn"), hideText:"ESCONDER BIBLIOTECA", showText:"MOSTRAR BIBLIOTECA"},
+      {key:"customize", panel:$("customizePanel"), button:$("toggleCustomizeBtn"), hideText:"ESCONDER PERSONALIZAÇÃO", showText:"MOSTRAR PERSONALIZAÇÃO"}
+    ];
+
+    configs.forEach(({key,panel,button,hideText,showText}) => {
+      const visible = panelVisibility[key] !== false;
+      panel?.classList.toggle("panelHidden", !visible);
+      button?.classList.toggle("is-hidden", !visible);
+      if (button) {
+        button.textContent = visible ? hideText : showText;
+        button.setAttribute("aria-expanded", String(visible));
+      }
+    });
+  }
+
+  function togglePanel(key) {
+    panelVisibility[key] = !(panelVisibility[key] !== false);
+    savePanelVisibility();
+    applyPanelVisibility();
+  }
+
+  function loadFirebaseConfig() {
+    try {
+      return JSON.parse(localStorage.getItem(FIREBASE_CONFIG_KEY)) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function parseFirebaseConfig(raw) {
+    let s = String(raw || "").trim();
+    const start = s.indexOf("{");
+    const end = s.lastIndexOf("}");
+    if (start >= 0 && end > start) s = s.slice(start, end + 1);
+
+    // Standard Firebase snippets use unquoted JS object keys. Convert those to JSON.
+    s = s.replace(/([{,]\s*)([A-Za-z_$][\w$]*)(\s*:)/g, '$1"$2"$3');
+    s = s.replace(/,\s*}/g, "}");
+    s = s.replace(/'/g, '"');
+
+    const cfg = JSON.parse(s);
+    if (!cfg.apiKey || !cfg.databaseURL || !cfg.projectId) {
+      throw new Error("Faltam apiKey, databaseURL ou projectId.");
+    }
+    return cfg;
+  }
+
+  function setFirebaseStatus(kind, message) {
+    firebaseDot.className = `statusDot ${kind}`;
+    firebaseStatus.textContent = message;
+  }
+
+  function encodeConfig(cfg) {
+    const json = JSON.stringify(cfg);
+    const bytes = new TextEncoder().encode(json);
+    let binary = "";
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+
+  function loadPlayersOverlayLayout() {
+    const saved = String(localStorage.getItem(PLAYERS_OVERLAY_LAYOUT_KEY) || "horizontal").toLowerCase();
+    return saved === "vertical" ? "vertical" : "horizontal";
+  }
+
+  let playersOverlayLayout = loadPlayersOverlayLayout();
+
+  function savePlayersOverlayLayout() {
+    localStorage.setItem(PLAYERS_OVERLAY_LAYOUT_KEY, playersOverlayLayout);
+  }
+
+  function updatePlayersLayoutUi() {
+    const isPlayers = overlayMode.value === "players";
+    playersLayoutControl.classList.toggle("show", isPlayers);
+    playersLayoutHorizontalBtn.classList.toggle("active", playersOverlayLayout === "horizontal");
+    playersLayoutVerticalBtn.classList.toggle("active", playersOverlayLayout === "vertical");
+  }
+
+  function setPlayersOverlayLayout(layout) {
+    playersOverlayLayout = layout === "vertical" ? "vertical" : "horizontal";
+    savePlayersOverlayLayout();
+    updatePlayersLayoutUi();
+  }
+
+  function buildOverlayUrl(mode = overlayMode.value) {
+    if (!firebaseConfig) throw new Error("Configura primeiro o Firebase.");
+    const url = new URL("./overlay.html", window.location.href);
+    url.search = "";
+    url.hash = "";
+    url.searchParams.set("session", sessionId);
+    url.searchParams.set("mode", mode);
+    if (mode === "players") {
+      url.searchParams.set("layout", playersOverlayLayout);
+    }
+    url.searchParams.set("cfg", encodeConfig(firebaseConfig));
+    url.searchParams.set("bridge", discordBridgeId);
+    return url.toString();
+  }
+
+  async function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+
+  async function connectFirebase() {
+    sessionCode.textContent = sessionId;
+    if (firebaseConfigInput && firebaseConfig) {
+      firebaseConfigInput.value = JSON.stringify(firebaseConfig, null, 2);
+    }
+
+    if (!firebaseConfig) {
+      setFirebaseStatus("waiting", "Firebase ainda não configurado.");
+      return;
+    }
+
+    try {
+      setFirebaseStatus("waiting", "A ligar ao Firebase...");
+      firebaseApp = firebase.initializeApp(firebaseConfig, `horxs-${Date.now()}`);
+      await firebaseApp.auth().signInAnonymously();
+      firebaseDb = firebaseApp.database();
+      firebaseSessionRef = firebaseDb.ref(`horxsSessions/${sessionId}`);
+      connectDiscordBridge();
+
+      firebaseDb.ref(".info/connected").on("value", snap => {
+        if (snap.val() === true) {
+          firebaseReady = true;
+          setFirebaseStatus("online", "Overlay ligado em tempo real.");
+          syncState(true);
+        } else {
+          firebaseReady = false;
+          setFirebaseStatus("offline", "Sem ligação ao Firebase.");
+        }
+      });
+    } catch (err) {
+      firebaseReady = false;
+      setFirebaseStatus("offline", `Erro Firebase: ${err.message}`);
+    }
+  }
+
+  function voiceStateForCharacter(char) {
+    const userId = String(char?.discordUserId || "");
+    return userId ? (discordVoice?.participants?.[userId] || null) : null;
+  }
+
+  function voiceClassForCharacter(char) {
+    const v = voiceStateForCharacter(char);
+    if (!v) return "";
+    if (v.muted || v.deafened) return "voice-muted";
+    if (v.speaking) return "voice-speaking";
+    return "voice-idle";
+  }
+
+  function connectDiscordBridge() {
+    discordBridgeCode.textContent = discordBridgeId;
+    if (!firebaseDb) return;
+
+    if (discordBridgeRef) discordBridgeRef.off();
+    discordBridgeRef = firebaseDb.ref(`discordBridges/${discordBridgeId}`);
+    discordBridgeRef.on("value", snap => {
+      const data = snap.val() || {};
+      discordVoice = {
+        online: Boolean(data.online),
+        channel: data.channel || null,
+        participants: data.participants || {},
+        updatedAt: data.updatedAt || 0
+      };
+      renderDiscordPanel();
+      applyVoiceClasses();
+    }, err => {
+      discordDot.className = "statusDot offline";
+      discordStatus.textContent = `Erro Discord Bridge: ${err.message}`;
+    });
+  }
+
+  function renderDiscordPanel() {
+    discordBridgeCode.textContent = discordBridgeId;
+    const participants = Object.values(discordVoice.participants || {}).filter(p => !p.bot);
+
+    if (!firebaseConfig) {
+      discordDot.className = "statusDot waiting";
+      discordStatus.textContent = "Configura primeiro o Firebase.";
+    } else if (discordVoice.online) {
+      discordDot.className = "statusDot online";
+      discordStatus.textContent = "Discord Bridge ligado.";
+    } else {
+      discordDot.className = "statusDot waiting";
+      discordStatus.textContent = "Discord Bridge offline.";
+    }
+
+    discordChannelInfo.textContent = discordVoice.channel?.name
+      ? `CALL: ${discordVoice.channel.name} • ${participants.length} pessoa(s)`
+      : (discordVoice.online ? "Bridge ligado, mas ainda não estás numa call." : "Nenhuma call detetada.");
+
+    if (!participants.length) {
+      discordPeople.innerHTML = `<div class="bridgeOffline">${discordVoice.online ? "Entra numa call do Discord para aparecerem aqui as pessoas." : "Liga o Discord Bridge para aparecerem aqui as pessoas da call."}</div>`;
+      return;
+    }
+
+    discordPeople.innerHTML = participants.map(p => {
+      const status = (p.muted || p.deafened) ? "muted" : (p.speaking ? "speaking" : "idle");
+      const statusText = (p.muted || p.deafened)
+        ? (p.deafened ? "MUTADO / SEM SOM" : "MUTADO")
+        : (p.speaking ? "A FALAR" : "EM SILÊNCIO");
+
+      const mapped = state.characters.find(c => String(c.discordUserId || "") === String(p.userId || ""));
+      const options = [
+        `<option value="">— sem personagem —</option>`,
+        ...state.characters.map(c =>
+          `<option value="${c.id}" ${mapped?.id === c.id ? "selected" : ""}>${escapeHTML(c.name)} [${normalizeRole(c.role)}]</option>`
+        )
+      ].join("");
+
+      const av = String(p.avatarUrl || "");
+      const avatarHtml = av
+        ? `<img src="${escapeHTML(av)}" alt="${escapeHTML(p.displayName || p.username || "Discord")}">`
+        : escapeHTML(avatarInitial(p.displayName || p.username));
+
+      return `
+        <div class="discordPerson">
+          <div class="discordPersonTop">
+            <div class="discordAvatar">${avatarHtml}</div>
+            <div>
+              <div class="discordPersonName">${escapeHTML(p.displayName || p.username || p.userId)}</div>
+              <div class="discordState ${status}">${statusText}</div>
+            </div>
+            <div class="roleBadge ${status === "muted" ? "boss" : status === "speaking" ? "player" : "npc"}">${status === "muted" ? "MUTE" : status === "speaking" ? "VOICE" : "IDLE"}</div>
+          </div>
+          <div class="discordMap">
+            <label>Associar à personagem</label>
+            <select data-discord-map="${escapeHTML(String(p.userId || ""))}">${options}</select>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function applyVoiceClasses() {
+    document.querySelectorAll("[data-character-name-id]").forEach(el => {
+      const char = state.characters.find(c => c.id === el.dataset.characterNameId);
+      el.classList.remove("voice-speaking","voice-idle","voice-muted");
+      const cls = voiceClassForCharacter(char);
+      if (cls) el.classList.add(cls);
+    });
+
+    turnName.classList.remove("voice-speaking","voice-idle","voice-muted");
+    if (state.started && state.characters[state.currentIndex]) {
+      const cls = voiceClassForCharacter(state.characters[state.currentIndex]);
+      if (cls) turnName.classList.add(cls);
+    }
+  }
+
+  function mapDiscordUser(userId, characterId) {
+    checkpoint();
+    state.characters.forEach(c => {
+      if (String(c.discordUserId || "") === String(userId)) c.discordUserId = "";
+    });
+    if (characterId) {
+      const char = state.characters.find(c => c.id === characterId);
+      if (char) {
+        char.discordUserId = String(userId);
+        addHistory(`Discord associado: ${char.name}.`);
+      }
+    }
+    render();
+  }
+
+  function renderOverlayThemeControls() {
+    state.overlayTheme = normalizeOverlayTheme(state.overlayTheme);
+
+    Object.entries(themeInputs).forEach(([key, input]) => {
+      if (!input) return;
+      input.value = state.overlayTheme[key];
+    });
+
+    $("themePanelOpacityValue").textContent = `${state.overlayTheme.panelOpacity}%`;
+    $("themeDiscordIdleBrightnessValue").textContent = `${state.overlayTheme.discordIdleBrightness}%`;
+  }
+
+  function updateOverlayThemeValue(key, rawValue) {
+    const next = {...normalizeOverlayTheme(state.overlayTheme)};
+    next[key] = (key === "panelOpacity" || key === "discordIdleBrightness")
+      ? Number(rawValue)
+      : String(rawValue);
+
+    state.overlayTheme = normalizeOverlayTheme(next);
+
+    if (key === "panelOpacity") {
+      $("themePanelOpacityValue").textContent = `${state.overlayTheme.panelOpacity}%`;
+    }
+    if (key === "discordIdleBrightness") {
+      $("themeDiscordIdleBrightnessValue").textContent = `${state.overlayTheme.discordIdleBrightness}%`;
+    }
+
+    save();
+    syncState();
+  }
+
+  function resetOverlayTheme() {
+    state.overlayTheme = {...DEFAULT_OVERLAY_THEME};
+    renderOverlayThemeControls();
+    save();
+    syncState(true);
+    notice("Personalização dos overlays restaurada.");
+  }
+
+  function renderLiveOverlayControl() {
+    const visible = state.overlayVisible !== false;
+
+    liveOverlayStatus.textContent = visible
+      ? "VISÍVEL NA LIVE — alterações aparecem em tempo real"
+      : "OCULTO NA LIVE — podes preparar personagens, bosses e combate sem o público ver";
+
+    liveOverlayStatus.classList.toggle("is-hidden", !visible);
+
+    toggleLiveOverlayBtn.textContent = visible
+      ? "ESCONDER OVERLAY DA LIVE"
+      : "MOSTRAR OVERLAY NA LIVE";
+
+    toggleLiveOverlayBtn.classList.toggle("overlay-visible", visible);
+    toggleLiveOverlayBtn.classList.toggle("overlay-hidden", !visible);
+  }
+
+  function toggleLiveOverlay() {
+    checkpoint();
+    state.overlayVisible = !(state.overlayVisible !== false);
+
+    addHistory(state.overlayVisible
+      ? "Overlay da live foi mostrado."
+      : "Overlay da live foi ocultado.");
+
+    render();
+    notice(state.overlayVisible
+      ? "Overlay mostrado na live."
+      : "Overlay ocultado. Podes preparar o combate.");
+  }
+
+  function publicState() {
+    return {
+      characters: state.characters,
+      effects: state.effects,
+      currentIndex: state.currentIndex,
+      round: state.round,
+      started: state.started,
+      overlayVisible: state.overlayVisible !== false,
+      overlayTheme: normalizeOverlayTheme(state.overlayTheme)
+    };
+  }
+
+  function syncState(force = false) {
+    if (!firebaseReady || !firebaseSessionRef) return;
+    const payload = publicState();
+    const json = JSON.stringify(payload);
+    if (!force && json === lastSyncedJson) return;
+    lastSyncedJson = json;
+
+    firebaseSessionRef.set({
+      ...payload,
+      updatedAt: firebase.database.ServerValue.TIMESTAMP
+    }).catch(err => setFirebaseStatus("offline", `Erro ao sincronizar: ${err.message}`));
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function cloneState(value = state) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function checkpoint() {
+    undoStack.push(cloneState());
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+    redoStack.length = 0;
+    updateUndoButtons();
+  }
+
+  function updateUndoButtons() {
+    const undoBtn = $("undoBtn");
+    const redoBtn = $("redoBtn");
+    if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+    if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+  }
+
+  function undo() {
+    if (!undoStack.length) return notice("Nada para desfazer.");
+    redoStack.push(cloneState());
+    state = undoStack.pop();
+    render();
+    updateUndoButtons();
+    notice("Ação desfeita.");
+  }
+
+  function redo() {
+    if (!redoStack.length) return notice("Nada para refazer.");
+    undoStack.push(cloneState());
+    state = redoStack.pop();
+    render();
+    updateUndoButtons();
+    notice("Ação refeita.");
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (err) {
+      console.warn("Não foi possível guardar tudo no localStorage:", err);
+    }
+  }
+
+  function load() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (saved && Array.isArray(saved.characters)) {
+        state = {...state, ...saved};
+        state.overlayVisible = saved.overlayVisible !== false;
+        state.overlayTheme = normalizeOverlayTheme(saved.overlayTheme);
+        state.effects = Array.isArray(state.effects)
+          ? state.effects.map(e => ({...e, isCurse:Boolean(e.isCurse)}))
+          : [];
+
+        state.characters = state.characters.map(c => {
+          const maxHp = Number.isFinite(Number(c.maxHp)) && Number(c.maxHp) > 0 ? Number(c.maxHp) : 20;
+          const currentHp = Number.isFinite(Number(c.currentHp))
+            ? Math.max(0, Math.min(Number(c.currentHp), maxHp))
+            : maxHp;
+          const role = ["PLAYER","NPC","ENEMY","BOSS"].includes(c.role) ? c.role : "PLAYER";
+          const avatar = safeAvatarData(c.avatar);
+          const fullBodyImage = safeAvatarData(c.fullBodyImage);
+          return {
+            ...c,
+            maxHp,
+            currentHp,
+            role,
+            avatar,
+            fullBodyImage,
+            libraryId: String(c.libraryId || ""),
+            discordUserId: String(c.discordUserId || ""),
+            hideMaxHpOverlay: Boolean(c.hideMaxHpOverlay)
+          };
+        });
+      }
+    } catch {}
+  }
+
+  function notice(text) {
+    const el = $("notice");
+    el.textContent = text;
+    el.classList.add("show");
+    clearTimeout(notice.timer);
+    notice.timer = setTimeout(() => el.classList.remove("show"), 1800);
+  }
+
+  function addHistory(text) {
+    state.history.unshift(text);
+    state.history = state.history.slice(0, 30);
+  }
+
+  function escapeHTML(str) {
+    return String(str)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function safeAvatarData(value) {
+    const s = String(value || "");
+    return /^data:image\/(?:png|jpeg|webp);base64,/i.test(s) ? s : "";
+  }
+
+  function avatarInitial(name) {
+    const clean = String(name || "?").trim();
+    return (clean[0] || "?").toUpperCase();
+  }
+
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImageElement(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("A imagem escolhida é inválida."));
+      img.src = src;
+    });
+  }
+
+  async function make300Avatar(file) {
+    const allowed = ["image/png", "image/jpeg", "image/webp"];
+    if (!file) throw new Error("Escolhe uma imagem para o personagem.");
+    if (!allowed.includes(file.type)) throw new Error("Usa uma imagem PNG, JPG ou WEBP.");
+    if (file.size > 8 * 1024 * 1024) throw new Error("A imagem não pode ter mais de 8 MB.");
+
+    const raw = await readFileAsDataURL(file);
+    const img = await loadImageElement(raw);
+    const sourceSize = Math.min(img.naturalWidth, img.naturalHeight);
+    const sx = Math.max(0, (img.naturalWidth - sourceSize) / 2);
+    const sy = Math.max(0, (img.naturalHeight - sourceSize) / 2);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 300;
+    canvas.height = 300;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.clearRect(0, 0, 300, 300);
+    ctx.drawImage(img, sx, sy, sourceSize, sourceSize, 0, 0, 300, 300);
+
+    // PNGs keep PNG output so transparent pixels remain transparent.
+    // JPG uses WEBP to save space; WEBP also supports alpha if needed.
+    if (file.type === "image/png") {
+      return canvas.toDataURL("image/png");
+    }
+
+    let result = canvas.toDataURL("image/webp", 0.84);
+    if (!result.startsWith("data:image/webp")) {
+      result = canvas.toDataURL("image/png");
+    }
+    return result;
+  }
+
+  async function makeFullBodyImage(file) {
+    const allowed = ["image/png", "image/jpeg", "image/webp"];
+    if (!file) throw new Error("Escolhe uma imagem de corpo inteiro.");
+    if (!allowed.includes(file.type)) throw new Error("Usa uma imagem PNG, JPG ou WEBP.");
+    if (file.size > 10 * 1024 * 1024) throw new Error("A imagem de corpo inteiro não pode ter mais de 10 MB.");
+
+    const raw = await readFileAsDataURL(file);
+    const img = await loadImageElement(raw);
+
+    const maxWidth = 700;
+    const maxHeight = 1200;
+    const ratio = Math.min(maxWidth / img.naturalWidth, maxHeight / img.naturalHeight, 1);
+    const width = Math.max(1, Math.round(img.naturalWidth * ratio));
+    const height = Math.max(1, Math.round(img.naturalHeight * ratio));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+
+    if (file.type === "image/png") {
+      return canvas.toDataURL("image/png");
+    }
+
+    let result = canvas.toDataURL("image/webp", 0.86);
+    if (!result.startsWith("data:image/webp")) {
+      result = canvas.toDataURL("image/png");
+    }
+    return result;
+  }
+
+  function updateImageProcessingUi() {
+    const busy = avatarProcessing || fullBodyProcessing;
+    $("addCharacterBtn").disabled = busy;
+    $("saveLibraryBtn").disabled = busy;
+  }
+
+  function resetAvatarPicker() {
+    pendingCharacterAvatar = "";
+    avatarProcessing = false;
+    characterImage.value = "";
+    avatarPreview.classList.remove("has-image");
+    avatarPreviewImg.removeAttribute("src");
+    characterImageName.textContent = "Nenhuma imagem escolhida.";
+    updateImageProcessingUi();
+  }
+
+  function resetFullBodyPicker() {
+    pendingCharacterFullBody = "";
+    fullBodyProcessing = false;
+    characterFullBodyImage.value = "";
+    fullBodyPreview.classList.remove("has-image");
+    fullBodyPreviewImg.removeAttribute("src");
+    characterFullBodyImageName.textContent = "Nenhuma imagem escolhida.";
+    updateImageProcessingUi();
+  }
+
+  function setTurnAvatar(char) {
+    const avatar = safeAvatarData(char?.avatar);
+    if (avatar) {
+      turnAvatarImg.src = avatar;
+      turnAvatar.classList.add("has-image");
+    } else {
+      turnAvatarImg.removeAttribute("src");
+      turnAvatar.classList.remove("has-image");
+      turnAvatarFallback.textContent = avatarInitial(char?.name);
+    }
+  }
+
+  function normalizeRole(role) {
+    return ["PLAYER","NPC","ENEMY","BOSS"].includes(role) ? role : "PLAYER";
+  }
+
+  function updateBossConfigVisibility() {
+    const boss = normalizeRole(characterRole.value) === "BOSS";
+    bossConfig.classList.toggle("show", boss);
+    if (!boss) bossHideMaxHp.checked = false;
+  }
+
+  function roleClass(role) {
+    return normalizeRole(role).toLowerCase();
+  }
+
+  function libraryItemFromForm() {
+    const name = characterName.value.trim();
+    const maxHp = Math.floor(Number(characterMaxHp.value));
+    const currentHpInput = Math.floor(Number(characterCurrentHp.value));
+    const role = normalizeRole(characterRole.value);
+
+    if (!name) throw new Error("Escreve o nome do personagem.");
+    if (avatarProcessing) throw new Error("Espera a imagem do retrato acabar de processar.");
+    if (fullBodyProcessing) throw new Error("Espera a imagem de corpo inteiro acabar de processar.");
+    if (!safeAvatarData(pendingCharacterAvatar)) throw new Error("Escolhe uma imagem para o personagem.");
+    if (!Number.isFinite(maxHp) || maxHp < 1) throw new Error("O HP máximo tem de ser 1 ou mais.");
+    if (!Number.isFinite(currentHpInput) || currentHpInput < 0) throw new Error("O HP atual não pode ser negativo.");
+
+    return {
+      name,
+      currentHp: Math.min(currentHpInput, maxHp),
+      maxHp,
+      role,
+      avatar: pendingCharacterAvatar,
+      fullBodyImage: safeAvatarData(pendingCharacterFullBody),
+      discordUserId: preparedLibraryDiscordUserId || "",
+      hideMaxHpOverlay: role === "BOSS" ? Boolean(bossHideMaxHp.checked) : false
+    };
+  }
+
+  function clearCharacterForm() {
+    characterName.value = "";
+    characterCurrentHp.value = "20";
+    characterMaxHp.value = "20";
+    characterRole.value = "PLAYER";
+    bossHideMaxHp.checked = false;
+    updateBossConfigVisibility();
+    preparedLibraryDiscordUserId = "";
+    editingLibraryId = null;
+    editingLibrary.classList.remove("show");
+    editingLibrary.textContent = "";
+    $("cancelLibraryEditBtn").style.display = "none";
+    $("saveLibraryBtn").textContent = "Guardar personagem";
+    resetAvatarPicker();
+    resetFullBodyPicker();
+  }
+
+  function prepareLibraryCharacter(id) {
+    const item = characterLibrary.find(x => x.id === id);
+    if (!item) return;
+    editingLibraryId = item.id;
+    preparedLibraryDiscordUserId = item.discordUserId || "";
+    characterName.value = item.name;
+    characterCurrentHp.value = item.currentHp;
+    characterMaxHp.value = item.maxHp;
+    characterRole.value = normalizeRole(item.role);
+    bossHideMaxHp.checked = Boolean(item.hideMaxHpOverlay);
+    updateBossConfigVisibility();
+    pendingCharacterAvatar = safeAvatarData(item.avatar);
+    pendingCharacterFullBody = safeAvatarData(item.fullBodyImage);
+    characterImage.value = "";
+    characterFullBodyImage.value = "";
+
+    if (pendingCharacterAvatar) {
+      avatarPreviewImg.src = pendingCharacterAvatar;
+      avatarPreview.classList.add("has-image");
+      characterImageName.textContent = "Imagem carregada da biblioteca (300 × 300)";
+    } else {
+      avatarPreview.classList.remove("has-image");
+      avatarPreviewImg.removeAttribute("src");
+      characterImageName.textContent = "Nenhuma imagem escolhida.";
+    }
+
+    if (pendingCharacterFullBody) {
+      fullBodyPreviewImg.src = pendingCharacterFullBody;
+      fullBodyPreview.classList.add("has-image");
+      characterFullBodyImageName.textContent = "Imagem de corpo inteiro carregada da biblioteca";
+    } else {
+      fullBodyPreview.classList.remove("has-image");
+      fullBodyPreviewImg.removeAttribute("src");
+      characterFullBodyImageName.textContent = "Nenhuma imagem escolhida.";
+    }
+
+    editingLibrary.classList.add("show");
+    editingLibrary.textContent = `A preparar "${item.name}". Altera o que quiseres antes de adicionar ao combate ou atualizar o guardado.`;
+    $("cancelLibraryEditBtn").style.display = "";
+    $("saveLibraryBtn").textContent = "Atualizar guardado";
+    document.querySelector(".characterCreate").scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  function saveFormToLibrary() {
+    try {
+      const data = libraryItemFromForm();
+      if (editingLibraryId) {
+        const i = characterLibrary.findIndex(x => x.id === editingLibraryId);
+        if (i >= 0) characterLibrary[i] = {...characterLibrary[i], ...data};
+        notice("Personagem guardado atualizado.");
+      } else {
+        characterLibrary.unshift({id: uid(), ...data});
+        notice("Personagem guardado na biblioteca.");
+      }
+      if (saveCharacterLibrary()) renderLibrary();
+    } catch (err) {
+      notice(err.message);
+    }
+  }
+
+  function saveActiveCharacterToLibrary(id) {
+    const char = state.characters.find(c => c.id === id);
+    if (!char) return;
+
+    const existing = char.libraryId ? characterLibrary.find(x => x.id === char.libraryId) : null;
+    if (existing) {
+      Object.assign(existing, {
+        name: char.name,
+        currentHp: char.currentHp,
+        maxHp: char.maxHp,
+        role: normalizeRole(char.role),
+        avatar: safeAvatarData(char.avatar),
+        fullBodyImage: safeAvatarData(char.fullBodyImage),
+        discordUserId: String(char.discordUserId || ""),
+        hideMaxHpOverlay: Boolean(char.hideMaxHpOverlay)
+      });
+      notice(`${char.name} atualizado na biblioteca.`);
+    } else {
+      const libraryId = uid();
+      characterLibrary.unshift({
+        id: libraryId,
+        name: char.name,
+        currentHp: char.currentHp,
+        maxHp: char.maxHp,
+        role: normalizeRole(char.role),
+        avatar: safeAvatarData(char.avatar),
+        fullBodyImage: safeAvatarData(char.fullBodyImage),
+        discordUserId: String(char.discordUserId || ""),
+        hideMaxHpOverlay: Boolean(char.hideMaxHpOverlay)
+      });
+      char.libraryId = libraryId;
+      notice(`${char.name} guardado na biblioteca.`);
+      save();
+      syncState();
+    }
+
+    saveCharacterLibrary();
+    renderLibrary();
+  }
+
+  function deleteLibraryCharacter(id) {
+    const item = characterLibrary.find(x => x.id === id);
+    if (!item) return;
+    if (!confirm(`Apagar "${item.name}" da biblioteca?`)) return;
+
+    characterLibrary = characterLibrary.filter(x => x.id !== id);
+    state.characters.forEach(c => {
+      if (c.libraryId === id) c.libraryId = "";
+    });
+    if (editingLibraryId === id) clearCharacterForm();
+    saveCharacterLibrary();
+    renderLibrary();
+    notice("Personagem removido da biblioteca.");
+  }
+
+  function renderLibrary() {
+    libraryCount.textContent = `${characterLibrary.length} guardado${characterLibrary.length === 1 ? "" : "s"}`;
+
+    if (!characterLibrary.length) {
+      libraryList.innerHTML = `<div class="empty">Ainda não guardaste nenhum personagem.</div>`;
+      return;
+    }
+
+    libraryList.innerHTML = characterLibrary.map(item => {
+      const avatar = safeAvatarData(item.avatar);
+      const avatarHtml = avatar
+        ? `<img src="${escapeHTML(avatar)}" alt="${escapeHTML(item.name)}">`
+        : escapeHTML(avatarInitial(item.name));
+
+      return `
+        <div class="libraryCard">
+          <div class="libraryAvatar ${avatar ? "has-image" : ""}">${avatarHtml}</div>
+          <div>
+            <div class="libraryName">${escapeHTML(item.name)}</div>
+            <div class="libraryMeta">${normalizeRole(item.role)} • HP ${item.currentHp}/${item.maxHp}${normalizeRole(item.role) === "BOSS" && item.hideMaxHpOverlay ? " • Overlay: HP/???" : ""}${item.discordUserId ? " • Discord associado" : ""}${safeAvatarData(item.fullBodyImage) ? " • Corpo inteiro" : ""}</div>
+          </div>
+          <div class="libraryButtons">
+            <button class="success" data-library-prepare="${item.id}">Preparar</button>
+            <button class="secondary" data-library-edit="${item.id}">Editar</button>
+            <button class="danger" data-library-delete="${item.id}">Apagar</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function updateEffectCurseUi() {
+    const curse = effectCurse.checked;
+    effectTurns.disabled = curse;
+    effectTurns.title = curse ? "Maldições não têm duração em turnos." : "";
+  }
+
+  function updateEffectTargetUi() {
+    const specific = effectTargetType.value === "character";
+    effectCharacterWrap.style.display = specific ? "" : "none";
+  }
+
+  function effectTargetsFor(type) {
+    if (type === "character") {
+      const char = state.characters.find(c => c.id === effectCharacter.value);
+      return char ? [char] : [];
+    }
+
+    if (type === "players") {
+      return state.characters.filter(c => normalizeRole(c.role) === "PLAYER");
+    }
+
+    if (type === "npcs") {
+      return state.characters.filter(c => normalizeRole(c.role) === "NPC");
+    }
+
+    if (type === "players_npcs") {
+      return state.characters.filter(c => {
+        const role = normalizeRole(c.role);
+        return role === "PLAYER" || role === "NPC";
+      });
+    }
+
+    if (type === "bosses") {
+      return state.characters.filter(c => normalizeRole(c.role) === "BOSS");
+    }
+
+    return [];
+  }
+
+  function render() {
+    roundEl.textContent = state.round;
+    renderLiveOverlayControl();
+    renderOverlayThemeControls();
+
+    characterList.innerHTML = "";
+    if (!state.characters.length) {
+      characterList.innerHTML = `<div class="empty">Ainda não há personagens.</div>`;
+    } else {
+      state.characters.forEach((char, index) => {
+        const row = document.createElement("div");
+        const role = normalizeRole(char.role);
+        row.className = `char role-${roleClass(role)}` + (state.started && index === state.currentIndex ? " active" : "");
+        const hpPercent = char.maxHp > 0 ? Math.max(0, Math.min(100, (char.currentHp / char.maxHp) * 100)) : 0;
+        const hpClass = char.currentHp <= 0 ? "dead" : hpPercent <= 25 ? "critical" : hpPercent <= 50 ? "low" : "";
+        const avatar = safeAvatarData(char.avatar);
+        const avatarHtml = avatar
+          ? `<img class="charAvatar" src="${escapeHTML(avatar)}" alt="${escapeHTML(char.name)}">`
+          : `<div class="charAvatarFallback">${escapeHTML(avatarInitial(char.name))}</div>`;
+        row.innerHTML = `
+          <div class="pos">${index + 1}</div>
+          ${avatarHtml}
+          <div class="hpWrap">
+            <div class="charName" data-character-name-id="${char.id}">${escapeHTML(char.name)} <span class="roleBadge ${roleClass(role)}">${role}</span></div>
+            <div class="hpText">HP ${char.currentHp} / ${char.maxHp}${role === "BOSS" ? ` • Overlay: ${char.hideMaxHpOverlay ? "HP / ???" : "HP / máximo"}` : ""}</div>
+            <div class="hpBarOuter">
+              <div class="hpBarInner ${hpClass}" style="width:${hpPercent}%"></div>
+            </div>
+          </div>
+          <div class="miniBtns">
+            <button class="secondary" data-action="up" data-id="${char.id}" title="Subir">↑</button>
+            <button class="secondary" data-action="down" data-id="${char.id}" title="Descer">↓</button>
+            ${role === "BOSS" ? `<button class="warning" data-action="bosshp" data-id="${char.id}" title="Alternar HP máximo no overlay">${char.hideMaxHpOverlay ? "???" : "HP"}</button>` : ""}
+            <button class="success" data-action="save" data-id="${char.id}" title="Guardar na biblioteca">S</button>
+            <button class="danger" data-action="remove" data-id="${char.id}" title="Remover">X</button>
+          </div>
+        `;
+        characterList.appendChild(row);
+      });
+    }
+
+    const previousHpSelection = hpCharacter.value;
+    effectCharacter.innerHTML = "";
+    hpCharacter.innerHTML = "";
+
+    if (!state.characters.length) {
+      effectCharacter.innerHTML = `<option value="">Sem personagens</option>`;
+      hpCharacter.innerHTML = `<option value="">Sem personagens</option>`;
+    } else {
+      state.characters.forEach(c => {
+        const op1 = document.createElement("option");
+        op1.value = c.id;
+        op1.textContent = `${c.name} [${normalizeRole(c.role)}]`;
+        effectCharacter.appendChild(op1);
+
+        const op2 = document.createElement("option");
+        op2.value = c.id;
+        op2.textContent = `${c.name} [${normalizeRole(c.role)}]`;
+        hpCharacter.appendChild(op2);
+      });
+
+      if (state.characters.some(c => c.id === previousHpSelection)) {
+        hpCharacter.value = previousHpSelection;
+      }
+    }
+
+    renderHpPreview();
+    updateEffectCurseUi();
+    updateEffectTargetUi();
+
+    if (state.started && state.characters[state.currentIndex]) {
+      const current = state.characters[state.currentIndex];
+      setTurnAvatar(current);
+      turnName.textContent = current.name;
+      const activeEffects = state.effects.filter(e => e.characterId === current.id);
+      const effectText = activeEffects.length
+        ? `${activeEffects.length} efeito(s) ativo(s)`
+        : "Sem efeitos ativos";
+      turnSub.textContent = `${normalizeRole(current.role)} • HP ${current.currentHp}/${current.maxHp} • ${effectText}`;
+    } else {
+      setTurnAvatar(null);
+      turnName.textContent = "—";
+      turnSub.textContent = state.characters.length
+        ? "Carrega em Iniciar combate."
+        : "Adiciona personagens e inicia o combate.";
+    }
+
+    effectsList.innerHTML = "";
+    if (!state.effects.length) {
+      effectsList.innerHTML = `<div class="empty">Nenhum efeito ativo.</div>`;
+    } else {
+      state.effects.forEach(effect => {
+        const character = state.characters.find(c => c.id === effect.characterId);
+        const row = document.createElement("div");
+        row.className = "effect" + (effect.isCurse ? " is-curse" : "");
+        row.innerHTML = `
+          <div>
+            <strong>${escapeHTML(effect.name)}${effect.isCurse ? " ☠" : ""}</strong>
+            <small>${character ? `${escapeHTML(character.name)} [${normalizeRole(character.role)}]` : "Personagem removido"}</small>
+          </div>
+          <div class="turns ${effect.isCurse ? "curse" : ""}">
+            ${effect.isCurse ? "∞ MALDIÇÃO" : `${effect.turns} turno${effect.turns === 1 ? "" : "s"}`}
+          </div>
+          <button class="danger" data-effect-remove="${effect.id}">X</button>
+        `;
+        effectsList.appendChild(row);
+      });
+    }
+
+    historyList.innerHTML = state.history.length
+      ? state.history.map(h => `<div class="historyLine">${escapeHTML(h)}</div>`).join("")
+      : `<div class="historyLine">Ainda não aconteceu nada.</div>`;
+
+    $("startBtn").disabled = !state.characters.length || state.started;
+    $("finishCombatBtn").disabled = !state.started;
+    $("nextBtn").disabled = !state.started || !state.characters.length;
+    $("prevBtn").disabled = !state.started || !state.characters.length;
+    $("resetTurnBtn").disabled = !state.started;
+
+    renderLibrary();
+    renderDiscordPanel();
+    applyVoiceClasses();
+    save();
+    updateUndoButtons();
+    syncState();
+  }
+
+  function addCharacter() {
+    const name = characterName.value.trim();
+    const maxHp = Math.floor(Number(characterMaxHp.value));
+    const currentHpInput = Math.floor(Number(characterCurrentHp.value));
+    const role = normalizeRole(characterRole.value);
+
+    if (!name) return notice("Escreve o nome do personagem.");
+    if (avatarProcessing) return notice("Espera a imagem do retrato acabar de processar.");
+    if (fullBodyProcessing) return notice("Espera a imagem de corpo inteiro acabar de processar.");
+    if (!safeAvatarData(pendingCharacterAvatar)) return notice("Escolhe uma imagem para o personagem.");
+    if (!Number.isFinite(maxHp) || maxHp < 1) return notice("O HP máximo tem de ser 1 ou mais.");
+    if (!Number.isFinite(currentHpInput) || currentHpInput < 0) return notice("O HP atual não pode ser negativo.");
+
+    const currentHp = Math.min(currentHpInput, maxHp);
+
+    checkpoint();
+
+    state.characters.push({
+      id: uid(),
+      name,
+      currentHp,
+      maxHp,
+      role,
+      avatar: pendingCharacterAvatar,
+      fullBodyImage: safeAvatarData(pendingCharacterFullBody),
+      libraryId: editingLibraryId || "",
+      discordUserId: preparedLibraryDiscordUserId || "",
+      hideMaxHpOverlay: role === "BOSS" ? Boolean(bossHideMaxHp.checked) : false
+    });
+
+    addHistory(`+ ${name} [${role}] entrou com ${currentHp}/${maxHp} HP.`);
+    clearCharacterForm();
+    render();
+    characterName.focus();
+  }
+
+  function removeCharacter(id) {
+    const index = state.characters.findIndex(c => c.id === id);
+    if (index < 0) return;
+
+    const name = state.characters[index].name;
+    checkpoint();
+    state.characters.splice(index, 1);
+    state.effects = state.effects.filter(e => e.characterId !== id);
+
+    if (!state.characters.length) {
+      state.started = false;
+      state.currentIndex = -1;
+      state.round = 1;
+    } else if (state.currentIndex >= state.characters.length) {
+      state.currentIndex = state.characters.length - 1;
+    } else if (index < state.currentIndex) {
+      state.currentIndex--;
+    }
+
+    addHistory(`- ${name} foi removido.`);
+    render();
+  }
+
+  function moveCharacter(id, delta) {
+    const i = state.characters.findIndex(c => c.id === id);
+    const j = i + delta;
+    if (i < 0 || j < 0 || j >= state.characters.length) return;
+
+    const currentId = state.started && state.characters[state.currentIndex]
+      ? state.characters[state.currentIndex].id
+      : null;
+
+    checkpoint();
+
+    [state.characters[i], state.characters[j]] = [state.characters[j], state.characters[i]];
+
+    if (currentId) {
+      state.currentIndex = state.characters.findIndex(c => c.id === currentId);
+    }
+    render();
+  }
+
+  function startCombat() {
+    if (!state.characters.length) return;
+    checkpoint();
+    state.started = true;
+    state.currentIndex = 0;
+    state.round = 1;
+    addHistory(`Combate iniciado. Vez de ${state.characters[0].name}.`);
+    render();
+    notice(`É a vez de ${state.characters[0].name}!`);
+  }
+
+  function finishCombat() {
+    if (!state.started) return notice("Não existe nenhum combate ativo.");
+
+    const activeEffects = state.effects.length;
+    const curses = state.effects.filter(effect => effect.isCurse).length;
+
+    if (!confirm(
+      `Finalizar o combate?\n\n` +
+      `• Os personagens e o HP atual serão mantidos.\n` +
+      `• Todos os efeitos e maldições serão removidos.\n` +
+      `• A rodada volta para 1.`
+    )) return;
+
+    checkpoint();
+
+    state.started = false;
+    state.currentIndex = -1;
+    state.round = 1;
+    state.effects = [];
+
+    let detail = "Combate finalizado.";
+    if (activeEffects) {
+      detail += ` ${activeEffects} efeito(s) removido(s)`;
+      if (curses) detail += `, incluindo ${curses} maldição(ões)`;
+      detail += ".";
+    }
+
+    addHistory(detail);
+    render();
+    notice("Combate finalizado. Personagens e HP foram mantidos.");
+  }
+
+  function tickAllEffects() {
+    const expired = [];
+
+    state.effects.forEach(effect => {
+      if (effect.isCurse) return;
+
+      effect.turns--;
+
+      if (effect.turns <= 0) {
+        expired.push(effect);
+      }
+    });
+
+    expired.forEach(effect => {
+      const char = state.characters.find(c => c.id === effect.characterId);
+      addHistory(`O efeito "${effect.name}" terminou em ${char ? char.name : "personagem"}.`);
+    });
+
+    state.effects = state.effects.filter(e => e.turns > 0);
+  }
+
+  function nextTurn() {
+    if (!state.started || !state.characters.length) return;
+
+    checkpoint();
+    tickAllEffects();
+
+    state.currentIndex++;
+    if (state.currentIndex >= state.characters.length) {
+      state.currentIndex = 0;
+      state.round++;
+      addHistory(`Rodada ${state.round} começou.`);
+    }
+
+    const next = state.characters[state.currentIndex];
+    addHistory(`Vez de ${next.name}.`);
+    render();
+    notice(`É a vez de ${next.name}!`);
+  }
+
+  function previousTurn() {
+    if (!state.started || !state.characters.length) return;
+
+    checkpoint();
+    state.currentIndex--;
+    if (state.currentIndex < 0) {
+      state.currentIndex = state.characters.length - 1;
+      if (state.round > 1) state.round--;
+    }
+
+    const current = state.characters[state.currentIndex];
+    addHistory(`Voltaste para a vez de ${current.name}.`);
+    render();
+    notice(`Voltaste para ${current.name}.`);
+  }
+
+  function resetOrder() {
+    if (!state.characters.length) return;
+    checkpoint();
+    state.started = true;
+    state.currentIndex = 0;
+    state.round = 1;
+    addHistory(`A ordem foi reiniciada.`);
+    render();
+    notice(`Ordem reiniciada.`);
+  }
+
+  function renderHpPreview() {
+    if (!hpPreview || !hpCharacter) return;
+
+    const char = state.characters.find(c => c.id === hpCharacter.value);
+    if (!char) {
+      hpPreview.textContent = "Seleciona um personagem.";
+      return;
+    }
+
+    const percent = char.maxHp > 0 ? Math.round((char.currentHp / char.maxHp) * 100) : 0;
+    hpPreview.textContent = `${char.name} [${normalizeRole(char.role)}]: ${char.currentHp} / ${char.maxHp} HP (${Math.max(0, percent)}%)`;
+  }
+
+  function changeHp(mode) {
+    const characterId = hpCharacter.value;
+    const amount = Math.floor(Number(hpAmount.value));
+    const char = state.characters.find(c => c.id === characterId);
+
+    if (!char) return notice("Escolhe um personagem.");
+    if (!Number.isFinite(amount) || amount < 1) return notice("A quantidade tem de ser 1 ou mais.");
+
+    checkpoint();
+
+    if (mode === "damage") {
+      const before = char.currentHp;
+      char.currentHp = Math.max(0, char.currentHp - amount);
+      const actual = before - char.currentHp;
+
+      addHistory(`${char.name} sofreu ${actual} de dano. HP: ${char.currentHp}/${char.maxHp}.`);
+
+      if (char.currentHp <= 0) {
+        notice(`${char.name} ficou com 0 HP!`);
+      } else {
+        notice(`${char.name} sofreu ${actual} de dano.`);
+      }
+    }
+
+    if (mode === "heal") {
+      const before = char.currentHp;
+      char.currentHp = Math.min(char.maxHp, char.currentHp + amount);
+      const actual = char.currentHp - before;
+
+      addHistory(`${char.name} recuperou ${actual} HP. HP: ${char.currentHp}/${char.maxHp}.`);
+      notice(`${char.name} recuperou ${actual} HP.`);
+    }
+
+    render();
+  }
+
+  function toggleBossMaxHpOverlay(id) {
+    const char = state.characters.find(c => c.id === id);
+    if (!char || normalizeRole(char.role) !== "BOSS") return;
+
+    checkpoint();
+    char.hideMaxHpOverlay = !Boolean(char.hideMaxHpOverlay);
+
+    if (char.libraryId) {
+      const saved = characterLibrary.find(item => item.id === char.libraryId);
+      if (saved) {
+        saved.hideMaxHpOverlay = Boolean(char.hideMaxHpOverlay);
+        saveCharacterLibrary();
+      }
+    }
+
+    addHistory(`${char.name}: HP máximo no overlay ${char.hideMaxHpOverlay ? "ocultado" : "visível"}.`);
+    render();
+    notice(char.hideMaxHpOverlay
+      ? `${char.name}: HP máximo ocultado no overlay.`
+      : `${char.name}: HP máximo visível no overlay.`);
+  }
+
+  function addEffect() {
+    const name = effectName.value.trim();
+    const isCurse = Boolean(effectCurse.checked);
+    const turns = isCurse ? null : Math.floor(Number(effectTurns.value));
+    const targetType = effectTargetType.value;
+
+    if (!name) return notice("Escreve o nome do efeito.");
+    if (!isCurse && (!Number.isFinite(turns) || turns < 1)) {
+      return notice("Os turnos têm de ser 1 ou mais.");
+    }
+
+    const targets = effectTargetsFor(targetType);
+
+    if (!targets.length) {
+      if (targetType === "character") return notice("Escolhe um personagem.");
+      return notice("Não existem personagens nesse grupo.");
+    }
+
+    checkpoint();
+
+    const groupId = uid();
+
+    targets.forEach(char => {
+      state.effects.push({
+        id: uid(),
+        groupId,
+        name,
+        turns: isCurse ? null : turns,
+        isCurse,
+        characterId: char.id
+      });
+    });
+
+    const durationText = isCurse ? "como MALDIÇÃO infinita" : `por ${turns} turno(s)`;
+
+    if (targets.length === 1) {
+      addHistory(`${targets[0].name} recebeu "${name}" ${durationText}.`);
+      notice(`${name} aplicado a ${targets[0].name}.`);
+    } else {
+      const names = targets.map(c => c.name).join(", ");
+      addHistory(`"${name}" foi aplicado a ${targets.length} personagens ${durationText}: ${names}.`);
+      notice(`${name} aplicado a ${targets.length} personagens.`);
+    }
+
+    effectName.value = "";
+    render();
+  }
+
+  function removeEffect(id) {
+    const effect = state.effects.find(e => e.id === id);
+    if (!effect) return;
+    checkpoint();
+    state.effects = state.effects.filter(e => e.id !== id);
+    addHistory(`O efeito "${effect.name}" foi removido manualmente.`);
+    render();
+  }
+
+  characterImage.addEventListener("change", async () => {
+    const file = characterImage.files?.[0];
+    pendingCharacterAvatar = "";
+    avatarPreview.classList.remove("has-image");
+    avatarPreviewImg.removeAttribute("src");
+
+    if (!file) {
+      characterImageName.textContent = "Nenhuma imagem escolhida.";
+      updateImageProcessingUi();
+      return;
+    }
+
+    avatarProcessing = true;
+    updateImageProcessingUi();
+    characterImageName.textContent = `A processar: ${file.name}`;
+
+    try {
+      pendingCharacterAvatar = await make300Avatar(file);
+      avatarPreviewImg.src = pendingCharacterAvatar;
+      avatarPreview.classList.add("has-image");
+      characterImageName.textContent = `${file.name} → pronta em 300 × 300`;
+      notice("Imagem pronta em 300 × 300.");
+    } catch (err) {
+      pendingCharacterAvatar = "";
+      characterImage.value = "";
+      characterImageName.textContent = "Nenhuma imagem escolhida.";
+      notice(err.message);
+    } finally {
+      avatarProcessing = false;
+      updateImageProcessingUi();
+    }
+  });
+
+  characterFullBodyImage.addEventListener("change", async () => {
+    const file = characterFullBodyImage.files?.[0];
+    pendingCharacterFullBody = "";
+    fullBodyPreview.classList.remove("has-image");
+    fullBodyPreviewImg.removeAttribute("src");
+
+    if (!file) {
+      characterFullBodyImageName.textContent = "Nenhuma imagem escolhida.";
+      updateImageProcessingUi();
+      return;
+    }
+
+    fullBodyProcessing = true;
+    updateImageProcessingUi();
+    characterFullBodyImageName.textContent = `A processar: ${file.name}`;
+
+    try {
+      pendingCharacterFullBody = await makeFullBodyImage(file);
+      fullBodyPreviewImg.src = pendingCharacterFullBody;
+      fullBodyPreview.classList.add("has-image");
+      characterFullBodyImageName.textContent = `${file.name} → pronta até 700 × 1200`;
+      notice("Imagem de corpo inteiro pronta.");
+    } catch (err) {
+      pendingCharacterFullBody = "";
+      characterFullBodyImage.value = "";
+      characterFullBodyImageName.textContent = "Nenhuma imagem escolhida.";
+      notice(err.message);
+    } finally {
+      fullBodyProcessing = false;
+      updateImageProcessingUi();
+    }
+  });
+
+  $("toggleDiscordBtn").addEventListener("click", () => togglePanel("discord"));
+  $("toggleObsBtn").addEventListener("click", () => togglePanel("obs"));
+  $("toggleLibraryBtn").addEventListener("click", () => togglePanel("library"));
+  $("toggleCustomizeBtn").addEventListener("click", () => togglePanel("customize"));
+
+  $("saveLibraryBtn").addEventListener("click", saveFormToLibrary);
+  $("cancelLibraryEditBtn").addEventListener("click", () => {
+    clearCharacterForm();
+    notice("Edição cancelada.");
+  });
+
+  libraryList.addEventListener("click", e => {
+    const prep = e.target.closest("[data-library-prepare]");
+    const edit = e.target.closest("[data-library-edit]");
+    const del = e.target.closest("[data-library-delete]");
+    if (prep) prepareLibraryCharacter(prep.dataset.libraryPrepare);
+    if (edit) prepareLibraryCharacter(edit.dataset.libraryEdit);
+    if (del) deleteLibraryCharacter(del.dataset.libraryDelete);
+  });
+
+  discordPeople.addEventListener("change", e => {
+    const select = e.target.closest("select[data-discord-map]");
+    if (!select) return;
+    mapDiscordUser(select.dataset.discordMap, select.value);
+  });
+
+  $("copyBridgeBtn").addEventListener("click", async () => {
+    try {
+      await copyText(discordBridgeId);
+      notice("Bridge ID copiado!");
+    } catch {
+      notice("Não foi possível copiar.");
+    }
+  });
+
+  $("newBridgeBtn").addEventListener("click", () => {
+    if (!confirm("Criar um novo Bridge ID? Terás de atualizar o .env do Discord Bridge.")) return;
+    discordBridgeId = createSessionId() + createSessionId();
+    localStorage.setItem(DISCORD_BRIDGE_KEY, discordBridgeId);
+    discordVoice = {online:false, channel:null, participants:{}};
+    connectDiscordBridge();
+    renderDiscordPanel();
+    notice("Novo Bridge ID criado.");
+  });
+
+  $("addCharacterBtn").addEventListener("click", addCharacter);
+  characterRole.addEventListener("change", updateBossConfigVisibility);
+
+  characterName.addEventListener("keydown", e => {
+    if (e.key === "Enter") addCharacter();
+  });
+
+  $("startBtn").addEventListener("click", startCombat);
+  $("finishCombatBtn").addEventListener("click", finishCombat);
+  $("nextBtn").addEventListener("click", nextTurn);
+  $("prevBtn").addEventListener("click", previousTurn);
+  $("resetTurnBtn").addEventListener("click", resetOrder);
+  $("addEffectBtn").addEventListener("click", addEffect);
+  effectCurse.addEventListener("change", updateEffectCurseUi);
+  effectTargetType.addEventListener("change", updateEffectTargetUi);
+  $("damageBtn").addEventListener("click", () => changeHp("damage"));
+  $("healBtn").addEventListener("click", () => changeHp("heal"));
+  $("undoBtn").addEventListener("click", undo);
+  $("redoBtn").addEventListener("click", redo);
+  $("resetHistoryBtn").addEventListener("click", () => {
+    if (!state.history.length) return notice("O histórico já está vazio.");
+    if (!confirm("Apagar apenas o histórico do combate?")) return;
+    checkpoint();
+    state.history = [];
+    render();
+    notice("Histórico resetado.");
+  });
+  hpCharacter.addEventListener("change", renderHpPreview);
+
+
+  $("saveFirebaseBtn").addEventListener("click", () => {
+    try {
+      const cfg = parseFirebaseConfig(firebaseConfigInput.value);
+      localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(cfg));
+      notice("Firebase guardado. A recarregar...");
+      setTimeout(() => location.reload(), 350);
+    } catch (err) {
+      notice(`Configuração inválida: ${err.message}`);
+    }
+  });
+
+  $("removeFirebaseBtn").addEventListener("click", () => {
+    if (!confirm("Remover a configuração Firebase deste navegador?")) return;
+    localStorage.removeItem(FIREBASE_CONFIG_KEY);
+    notice("Configuração Firebase removida.");
+    setTimeout(() => location.reload(), 300);
+  });
+
+  $("newSessionBtn").addEventListener("click", () => {
+    sessionId = createSessionId();
+    localStorage.setItem(SESSION_KEY, sessionId);
+    sessionCode.textContent = sessionId;
+    lastSyncedJson = "";
+
+    if (firebaseDb) {
+      firebaseSessionRef = firebaseDb.ref(`horxsSessions/${sessionId}`);
+      syncState(true);
+    }
+    notice("Nova sessão criada.");
+  });
+
+  toggleLiveOverlayBtn.addEventListener("click", toggleLiveOverlay);
+
+  Object.entries(themeInputs).forEach(([key, input]) => {
+    if (!input) return;
+    input.addEventListener("input", () => updateOverlayThemeValue(key, input.value));
+  });
+  $("resetOverlayThemeBtn").addEventListener("click", resetOverlayTheme);
+
+  overlayMode.addEventListener("change", updatePlayersLayoutUi);
+  playersLayoutHorizontalBtn.addEventListener("click", () => setPlayersOverlayLayout("horizontal"));
+  playersLayoutVerticalBtn.addEventListener("click", () => setPlayersOverlayLayout("vertical"));
+
+  $("copyOverlayBtn").addEventListener("click", async () => {
+    try {
+      const url = buildOverlayUrl();
+      await copyText(url);
+      if (location.protocol === "file:") {
+        notice("Link copiado. Para ter HTTPS, publica a pasta no GitHub Pages.");
+      } else {
+        notice("Link OBS copiado!");
+      }
+    } catch (err) {
+      notice(err.message);
+      $("firebaseSetup").open = true;
+    }
+  });
+
+  $("previewOverlayBtn").addEventListener("click", () => {
+    try {
+      window.open(buildOverlayUrl(), "_blank", "noopener");
+    } catch (err) {
+      notice(err.message);
+      $("firebaseSetup").open = true;
+    }
+  });
+
+  $("clearBtn").addEventListener("click", () => {
+    if (!confirm("Apagar personagens, efeitos e histórico?")) return;
+    checkpoint();
+    state = {
+      characters:[],
+      effects:[],
+      currentIndex:-1,
+      round:1,
+      started:false,
+      overlayVisible: state.overlayVisible !== false,
+      overlayTheme: normalizeOverlayTheme(state.overlayTheme),
+      history:[]
+    };
+    render();
+  });
+
+  characterList.addEventListener("click", e => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (btn.dataset.action === "up") moveCharacter(id, -1);
+    if (btn.dataset.action === "down") moveCharacter(id, 1);
+    if (btn.dataset.action === "bosshp") toggleBossMaxHpOverlay(id);
+    if (btn.dataset.action === "save") saveActiveCharacterToLibrary(id);
+    if (btn.dataset.action === "remove") removeCharacter(id);
+  });
+
+  effectsList.addEventListener("click", e => {
+    const btn = e.target.closest("button[data-effect-remove]");
+    if (btn) removeEffect(btn.dataset.effectRemove);
+  });
+
+  document.addEventListener("keydown", e => {
+    const tag = document.activeElement?.tagName || "";
+    const isEditing = ["INPUT","SELECT","TEXTAREA"].includes(tag);
+
+    if (e.code === "Space" && !["INPUT","SELECT","TEXTAREA","BUTTON"].includes(tag)) {
+      e.preventDefault();
+      nextTurn();
+      return;
+    }
+
+    if (!isEditing && (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
+      e.preventDefault();
+      undo();
+      return;
+    }
+
+    if (!isEditing && (
+      ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") ||
+      ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z")
+    )) {
+      e.preventDefault();
+      redo();
+    }
+  });
+
+  load();
+  updateBossConfigVisibility();
+  updateEffectCurseUi();
+  updateEffectTargetUi();
+  updatePlayersLayoutUi();
+  renderOverlayThemeControls();
+  updateImageProcessingUi();
+  applyPanelVisibility();
+  discordBridgeCode.textContent = discordBridgeId;
+  renderLibrary();
+  render();
+  updateUndoButtons();
+  connectFirebase();
+})();
+</script>
+</body>
+</html>
